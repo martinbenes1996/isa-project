@@ -11,14 +11,15 @@ defines = -DDEBUG_MODE
 linkings = -lpthread -lm
 flags = $(defines) -std=c++17 -O2 -g -pedantic -Wall -Wextra
 
-all: myripsniffer #myripresponse
+all: myripsniffer myripresponse
 
-myripsniffer: main.cpp
+myripsniffer: myripsniffer.cpp
 	@echo "Building $@.";\
 	$(cc) $(flags) $< -o $@
 
-myripresponse:
-	pass
+myripresponse: myripresponse.cpp
+	@echo "Building $@.";\
+	$(cc) $(flags) $< -o $@
 
 
 # doc
