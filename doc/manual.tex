@@ -44,133 +44,83 @@
     
     \pagenumbering{gobble}
     
-    The task of the project was to gather informations about DHCP protocol and
-    afterwards write a program in C, that performs a DHCP starvation attack.
-    
-    
-    
-    \section*{DHCP}
-    
-    
+    \section*{RIP}
+    %The task of the project was to gather informations about RIP protocols, RIPv1, RIPv2 and RIPng and
+    %to write two programs in C, one of them RIP sniffer and the other RIP fake responder.
     \subsection*{Motivation}
-    Every private network manages its own IP address space with reserved addresses, that
-    can be given to the internal devices. An assignment of the addresses may be
-    done either manually or automatically, using DHCP agent.
-    
-    Manual configuration forces the network administrator to manually setup the
-    local address for every device, newly connected to the network.
-    
-    The more pleasant way, especially for administrator, is using {\it plug-and-play}
-    DHCP protocol, where the address assignment is done by DHCP server.
-    \cite{computernetworking} \cite{pocitacovesite}
-    
-    
-    
-    \subsection*{DHCP protocol}
-    
+    Internet. It is everywhere nowadays - it helps us order pizza, find a taxi, do shopping,
+    connect us with all our friends but it also controls the lights, air condition units etc;
+    it has become significant part of our lives. There is a lot of data flowing through each
+    its part in every moment. This dataflow is directed ({\it routed}) by devices called routers,
+    knots in the huge network.
+
     \begin{figure}[h!]
         \begin{center}
-            %\includegraphics[width=0.18\textwidth]{dhcpcomm.png}
-            \caption{ DHCP communication. \label{fig:dhcp} \cite{DHCPcomm}}
+            \includegraphics[width=0.80\textwidth]{routing.png}
+            \caption{ Routing. \label{fig:routing}}
         \end{center}
     \end{figure}
+
+    Each router has multiple routes connected to it and it has a single task: it recieves
+    a chunk of data (packet) with an address on it and it is supposed to send it closer to
+    the target device in the network as you can see in the picture \ref{fig:routing}.
+    The router must decide which route should the packet go. And this is exactly what the RIP protocol does. 
     
-    When a device shows up in the network, it has not any local address, yet
-    it may communicate via broadcast.
-    
-    \subparagraph{DHCP Discovery}
-    The device has to inform DHCP server about itself. The DHCP server does not have
-    any strict local address, so the device sends DHCP Discovery packet to the
-    broadcast address ff.ff.ff.ff, which is received by every device in the
-    network, including the DHCP server.
-    
-    \subparagraph{DHCP Offer}
-    The server then reserves an address for the device, and sends DHCP Offer
-    response, unicast or multicast (set in received DHCP Discovery). If the
-    unicast is used, the MAC address from the DHCP Discovery is used as target
-    address (on L2).
-    
-    \subparagraph{DHCP Request}
-    The DHCP client (the device) then sends DHCP Request to the server (again
-    it must be to the broadcast address, the local address is not assigned yet).
-    The client may receive several DHCP Offer packets (there might be more DHCP
-    servers in the network), but when the servers receives the DHCP Request from
-    the client, answering another server, they will withdraw the offer and return
-    the reserved address back to the address pool.
-    
-    \subparagraph{DHCP Acknowledgement}
-    After receiving the DHCP Request, the server sends DHCP Acknowledgement,
-    including address lease duration. \cite{mistrovstvivsitich} \cite{DHCPwikipedia}
-    \cite{IPKDHCP}
-    
-    
-    
-    \subsection*{DHCP Attack variants}
-    
-    \paragraph{DHCP Discovery flood}
-    The clients sends repeatedly a large number of DHCP Discovery attacks with 
-    randomly generated MAC address (in {\it chaddr}). As a result, the DHCP server will
-    offer the whole pool using {\it DORA}\footnote{DHCP Discover - DHCP Offer - DHCP
-    Request - DHCP Acknowledgement packet sequence.} process, so the new legitimate
-    clients will not obtain an IP addresses from DHCP address.
-    
-    In WPA 2 (IEEE 802.11), a client connection includes an association with AP
-    (Access Point) and session key generation, where the client's MAC address is used.
-    The AP has a maximal number of addresses it can associate, which prevents
-    the pool from exhaustion.
-    
-    This may be solved with using different MAC address in ethernet header and
-    DHCP header. The ethernet header (read by AP) uses client's real MAC, so
-    it is forwarded, because it is already associated. The DHCP header than includes
-    the randomly generated MAC address.
-    
-    \paragraph{Induced DHCP starvation}
-    In this type of attack, there are three parties, a victim, a client, who wants to
-    acquire an IP from a server, the server, that assigns IP addresses and an
-    attacker, that listens to the communication using {\it eavesdropping}. 
-    
-    The client and the server do the classic DORA process, without any interrogation
-    of the attacker listening. After that, the client sends ARP\_REQ broadcast packet
-    checking the assigned IP address. The source IP address is still set to 0.0.0.0,
-    because the client still does not have the configured IP yet.
-    
-    The attacker then reacts with ARP\_REPLY, which is received by the client.
-    The destination IP address of the packet is 0.0.0.0.
-    
-    The malicious client sends DHCP Decline to the server to avoid the IP conflict,
-    because it is convinced, that the IP address received from the DHCP server
-    has already been assigned (to the attacker).
-    
-    The server marks the IP address as unvailable for a lease period. The victim starts
-    the whole procedure repeateadly until the pool is fully unavailable.
-    \cite{IBSattack}
-    
-    
-    
-    \subsection*{Security mechanisms}
-    
-    \paragraph{Port security}
-    The simpliest way, how to prevent such attacks is limitation of MAC addresses
-    per port in a network switch. If the limit is reached, the incident is reported
-    from a agent (switch) to the manager as SNMP trap.
-    
-    This check is applicable to the DHCP Discovery flood attack, where the MAC address
-    in the L2 is randomly generated, but is not, if the different MAC addresses are used.
-    
-    \paragraph{DHCP snooping}
-    This type of mechanism checks the matching MAC address in ethernet header
-    and in {\it chaddr} in DHCP header, it can detect the attack, where the MAC
-    addresses differ.
-    
-    \paragraph{Dynamic ARP inspection}
-    DAI uses DHCP snooping check and creates a database of records {\it MAC address
-    - IP address - VLAN interface}. It is filled with scanned DHCP communication
-    of the client with a DHCP server.
-    
-    It is able to detect, if the senders MAC address and IP address, acquired from
-    the DHCP server in the previous DORA communication, are the same as in
-    incoming packet. If not so, the fake ICMP communication is recognized as not
-    valid and the actions against it are taken. \cite{DHCPstarvation}
+
+    \subsection*{RIP Protocol}
+
+    {\it Routing Information Protocol} is a routing protocol. It enables routers to communicate and to react
+    on the network topology changes. RIP is a distance-vector protocol - no router knows the whole structure
+    of the network. The method it uses to count the shortest path is Bellman-Ford algorithm. A hop count
+    is used as a path cost.
+
+    \paragraph{RIP Communication}
+    The protocol uses UDP transport protocol and it has registered port 520 (RIPv1, RIPv2) and 521 (RIPng).
+    Two basic types of messages are used, RIP Request and RIP Response.
+
+    \paragraph{RIP Request}
+    RIP Request is sent when the router asks other router for the routing table content (all or just a part).
+
+    \paragraph{RIP Response}
+    RIP Response includes the routing table of the sender. The destination port is the port in the Source Port
+    array in the RIP Request. But it can be sent even without previous RIP Request received.\cite{RIPngStd}
+
+    \subsection*{RIP Route Determination}
+    Three main items of each record in the routing table are adress of the network/station, distance (hops)
+    and interface. RIP protocol enables routers to share their routing tables and make sending of data through
+    the network much more efficient. The receiving router always compares the new information with the one he has.
+
+    If the network X is reachable in N+1 hops (router increases the number by one), it is compared with the content
+    of the routing table. If the new route is better, it is set and algorithm is propagated to the neighbors to
+    recalculate - this is done again again until the algorithm reaches convergence.\cite{RIPguide}
+
+    \subsection*{Timeouts}
+
+    \subsection*{RIP Problems}
+    The popularity of the protocol is caused by its simplicity. Although it has some issues which led into replacing
+    RIP protocol in different routing protocols (EIGTP, OSPF).
+
+    \paragraph{Slow Convergence}
+    Due to the fact that timeout for sending RIP Response is set by RFC to 30~s, convergence of the whole algorithm
+    might take minutes, which is ages for today networing. The propagation of failure is even 180~s, initial delay
+    for propagation.
+
+    \paragraph{Loops}
+    At special occasions routing loops may occur.
+
+    \paragraph{Max hop count}
+    The max hop count is limited to 15. Hop count 16 means unreachable network (distance infinity).
+
+    \paragraph{CIDR unsupported}
+    The first version of protocol was not designed for classless addresses; Therefore in modern networks is useless.
+    It was fixed in RIPv2.
+
+    \paragraph{IPv6 unsupported}
+    Both RIPv1 and RIPv2 can work only with IPv4 addresses. The IPv6 addresses were enabled in RIPng.
+
+    \subsection*{Versions of RIP}
+
+
     
     
     \section*{Implementation}

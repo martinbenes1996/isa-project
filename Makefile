@@ -8,14 +8,14 @@
 # compile settings
 cc = g++
 defines = -DDEBUG_MODE
-linkings = -lpthread -lm
+linkings = -lpthread -lm -lpcap
 flags = $(defines) -std=c++17 -O2 -g -pedantic -Wall -Wextra
 
 all: myripsniffer myripresponse
 
 myripsniffer: myripsniffer.cpp
 	@echo "Building $@.";\
-	$(cc) $(flags) $< -o $@
+	$(cc) $(flags) $< -o $@ $(linkings)
 
 myripresponse: myripresponse.cpp
 	@echo "Building $@.";\
