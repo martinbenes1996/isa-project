@@ -25,10 +25,12 @@ int main(int argc, char *argv[]) {
     else printErrorAndExit("Usage: ./myripsniffer -i <interface>\n", 1);
 
     // connect to device
-    Sniffer d(ifce);
+    Sniffer s(ifce);
     
     // Listen
-    // ...
+    do {
+        s.listen();
+    } while(true);
 
     return 0;
 }
