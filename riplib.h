@@ -85,12 +85,17 @@ class Sniffer {
         }
 
         void listen() {
+            struct pcap_pkthdr * header;
             const u_char * data;
-            struct pcap_pkthdr header;
+            int status;
 
-            data = pcap_next(mhandle, &header);
+            std::cerr << "Listening...\n";
 
-            std::cerr << header.len << " B, but only " << header.caplen << " B captured.\n";
+            status = pcap_next_ex(mhandle, &header, &data);
+            if(status == 1) { std::cerr << header->len << " B, but only " << header->caplen << " B captured.\n"; }
+            else if(status == 0) {} 
+            else if(status == PCAP_ERROR) { printErrorAndExit(pcap_geterr(mhandle), 4); }
+            
         }
 
         /**
