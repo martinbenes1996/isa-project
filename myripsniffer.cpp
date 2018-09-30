@@ -25,7 +25,7 @@ int main(int argc, char *argv[]) {
     else printErrorAndExit("Usage: ./myripsniffer -i <interface>\n", 1);
 
     // connect to device
-    Device d(ifce);
+    Sniffer d(ifce);
     
     // Listen
     // ...

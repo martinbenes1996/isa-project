@@ -19,7 +19,7 @@ myripsniffer: myripsniffer.cpp
 
 myripresponse: myripresponse.cpp
 	@echo "Building $@.";\
-	$(cc) $(flags) $< -o $@
+	$(cc) $(flags) $< -o $@ $(linkings)
 
 
 # doc

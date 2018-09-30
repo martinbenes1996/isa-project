@@ -1,4 +1,5 @@
 
+#include <iostream>
 #include <pcap/pcap.h>
 
 // inspired by http://www.tcpdump.org/pcap.html
@@ -36,7 +37,7 @@ class Device {
             char errbuf[PCAP_ERRBUF_SIZE];
             int status;
 
-            handle = pcap_create(ifce.c_str(), errbuf); // create handle
+            mhandle = pcap_create(ifce.c_str(), errbuf); // create handle
             if(mhandle == NULL) printErrorAndExit(errbuf, 2);
 
             status = pcap_set_promisc(mhandle, 1); // set promiscuous mode
@@ -49,7 +50,7 @@ class Device {
         /**
          * @brief Destructor.
          */
-        ~Device() { pcap_close(handle); }
+        ~Device() { pcap_close(mhandle); }
 
     private:
         pcap_t *mhandle; /**< Handle. */
@@ -63,14 +64,14 @@ class Sniffer {
 
             // get ip and mask
             bpf_u_int32 mask, ip;
-            status = pcap_lookupnet(ifce, &ip, &mask, errbuff);
+            status = pcap_lookupnet(ifce.c_str(), &ip, &mask, errbuf);
             if(status == -1) {
                 std::cerr << errbuf << "\n";
                 ip = mask = 0;
             }
 
             // open session
-            mhandle = pcap_open_live(ifce, BUFSIZ, true, 1000, errbuf);
+            mhandle = pcap_open_live(ifce.c_str(), BUFSIZ, true, 1000, errbuf);
             if(mhandle == NULL) printErrorAndExit(errbuf, 2);
 
             // compile filter
@@ -88,6 +89,6 @@ class Sniffer {
          */
         ~Sniffer() { pcap_close(mhandle); }
     private:
-        pcap_t *handle;
+        pcap_t *mhandle;
         struct bpf_program mfilter;
-}
+};
