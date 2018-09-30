@@ -40,8 +40,6 @@ clean:
 .PHONY: zip
 zip:
 	@echo "Zipping files.";\
-	cp doc/manual.pdf .
-	@printf "";\
-	zip xbenes49.zip *.cpp *.h Makefile manual.pdf > /dev/null 2> /dev/null
-	@printf "";\
-	rm dokumentace.pdf
+	#cp doc/manual.pdf .
+	#@printf "";
+	zip xbenes49.zip *.cpp *.h Makefile doc/* > /dev/null 2> /dev/null
