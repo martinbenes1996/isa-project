@@ -5,6 +5,8 @@
 #include <climits>
 #include <ctype.h>
 
+#include "riplib.h"
+
 /* ------------------------------------------------------------- */
 const char * ifce = NULL;   /**< Interface name.*/
 int addr[4] = {-1,};        /**< Address of the fake network. */
@@ -133,7 +135,7 @@ int main(int argc, char *argv[]) {
         if(passwd == NULL) passwd = "";
         if(ifce == NULL) ifce = ""; // ???
     }
-    
+
     // incorrect count - fail
     else printUsageAndExit();
 
