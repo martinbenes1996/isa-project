@@ -9,7 +9,7 @@
 cc = g++
 defines = -DDEBUG_MODE
 linkings = -lpthread -lm -lpcap
-flags = $(defines) -std=c++17 -O2 -g -pedantic -Wall -Wextra
+flags = $(defines) -std=c++11 -O2 -g -pedantic -Wall -Wextra
 
 all: myripsniffer myripresponse
 
