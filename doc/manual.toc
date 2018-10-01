@@ -1,0 +1,55 @@
+\boolfalse {citerequest}\boolfalse {citetracker}\boolfalse {pagetracker}\boolfalse {backtracker}\relax 
+\defcounter {refsection}{0}\relax 
+\select@language {english}
+\defcounter {refsection}{0}\relax 
+\contentsline {section}{\numberline {1}Introduction}{2}
+\defcounter {refsection}{0}\relax 
+\contentsline {subsection}{\numberline {1.1}Task}{2}
+\defcounter {refsection}{0}\relax 
+\contentsline {subsection}{\numberline {1.2}Motivation}{2}
+\defcounter {refsection}{0}\relax 
+\contentsline {section}{\numberline {2}RIP Protocol}{2}
+\defcounter {refsection}{0}\relax 
+\contentsline {subsection}{\numberline {2.1}Messages}{2}
+\defcounter {refsection}{0}\relax 
+\contentsline {paragraph}{RIP Request}{2}
+\defcounter {refsection}{0}\relax 
+\contentsline {paragraph}{RIP Response}{3}
+\defcounter {refsection}{0}\relax 
+\contentsline {subsection}{\numberline {2.2}Communication}{3}
+\defcounter {refsection}{0}\relax 
+\contentsline {subsection}{\numberline {2.3}Route Determination}{3}
+\defcounter {refsection}{0}\relax 
+\contentsline {subsection}{\numberline {2.4}Versions}{4}
+\defcounter {refsection}{0}\relax 
+\contentsline {paragraph}{RIPv1}{4}
+\defcounter {refsection}{0}\relax 
+\contentsline {paragraph}{RIPv2}{4}
+\defcounter {refsection}{0}\relax 
+\contentsline {paragraph}{RIPng}{5}
+\defcounter {refsection}{0}\relax 
+\contentsline {subsection}{\numberline {2.5}Problems}{5}
+\defcounter {refsection}{0}\relax 
+\contentsline {paragraph}{Slow Convergence}{5}
+\defcounter {refsection}{0}\relax 
+\contentsline {paragraph}{Max hop count}{5}
+\defcounter {refsection}{0}\relax 
+\contentsline {paragraph}{Unsupported CIDR and IPv6}{5}
+\defcounter {refsection}{0}\relax 
+\contentsline {subsection}{\numberline {2.6}Optimalizations}{5}
+\defcounter {refsection}{0}\relax 
+\contentsline {paragraph}{Split Horizon}{5}
+\defcounter {refsection}{0}\relax 
+\contentsline {paragraph}{Poison Reverse}{5}
+\defcounter {refsection}{0}\relax 
+\contentsline {section}{\numberline {3}Implementation}{6}
+\defcounter {refsection}{0}\relax 
+\contentsline {subsection}{\numberline {3.1}Sniffer}{6}
+\defcounter {refsection}{0}\relax 
+\contentsline {subsection}{\numberline {3.2}Fake Responder}{6}
+\defcounter {refsection}{0}\relax 
+\contentsline {section}{\numberline {4}Application}{6}
+\defcounter {refsection}{0}\relax 
+\contentsline {subsection}{\numberline {4.1}Testing System Structure}{6}
+\defcounter {refsection}{0}\relax 
+\contentsline {subsection}{\numberline {4.2}Testing}{6}

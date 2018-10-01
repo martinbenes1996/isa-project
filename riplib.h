@@ -3,6 +3,7 @@
 #include <pcap/pcap.h>
 
 // inspired by http://www.tcpdump.org/pcap.html
+// inspired by https://www.devdungeon.com/content/using-libpcap-c
 
 /**
  * @brief Prints error and exits.
