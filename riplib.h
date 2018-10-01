@@ -1,6 +1,9 @@
 
 #include <iostream>
+#include <netinet/in.h>
 #include <pcap/pcap.h>
+#include <sys/socket.h>
+
 
 // inspired by http://www.tcpdump.org/pcap.html
 // inspired by https://www.devdungeon.com/content/using-libpcap-c
@@ -22,6 +25,20 @@ void printErrorAndExit(int error, int errcode) {
 void printErrorAndExit(std::string error, int errcode) {
     std::cerr << error << "\n";
     exit(errcode);
+}
+
+struct RIPngHeader {
+    uint8_t command;
+    uint8_t version;
+    uint16_t zero;
+    struct in6_addr addr;
+    uint16_t route_tag;
+    uint8_t prefix_length;
+    uint8_t metric;
+};
+
+RIPngHeader generateRIPngRequest() {
+    struct RIPngHeader;
 }
 
 
