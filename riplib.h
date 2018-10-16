@@ -9,6 +9,7 @@
 #include <net/ethernet.h>
 #include <string>
 #include <arpa/inet.h>
+#include <vector>
 
 
 // inspired by http://www.tcpdump.org/pcap.html
@@ -45,17 +46,24 @@ struct RIPngHeader {
 
 // https://github.com/lohith-bellad/RIPv2/blob/master/router.h
 // RIP payload structure 
-struct rippayload {
+struct RIPRouteRecord {
 	__u16	family;
 	__u16	res2;
-	__u32	address;
-	__u32	res3;
+	in_addr	address;
+	in_addr	res3;
 	__u32	res4;
 	__u32	metric;
 }; 
- 
+
+struct RIPngRouteRecord {
+	struct in6_addr	dst;
+	u_int16_t	tag;
+	u_int8_t	prefix;
+	u_int8_t	metric;
+};
+
 // RIP header structure 
-struct riphdr {
+struct RIPHdr {
 	__u8	comm;
 	__u8	version;
 	__u16	res1;
@@ -65,8 +73,9 @@ constexpr size_t ethHdrSize = sizeof(struct ether_header);
 constexpr size_t ipv4HdrSize = sizeof(struct ip);
 constexpr size_t ipv6HdrSize = sizeof(struct ip6_hdr);
 constexpr size_t udpHdrSize = sizeof(struct udphdr);
-constexpr size_t ripHdrSize = sizeof(struct riphdr);
-constexpr size_t ripPLHdrSize = sizeof(struct rippayload);
+constexpr size_t ripHdrSize = sizeof(struct RIPHdr);
+constexpr size_t ripRRSize = sizeof(struct RIPRouteRecord);
+constexpr size_t ripngRRSize = sizeof(struct RIPngRouteRecord);
 
 
 /**
@@ -101,6 +110,37 @@ class Device {
         pcap_t *mhandle; /**< Handle. */
 };
 
+struct RouteRecord {
+    std::string address;
+    std::string mask;
+    std::string route;
+    std::string metric;
+} records;
+
+struct Packet {
+    bool valid = true;
+    struct {
+        std::string protocol;
+        std::string src;
+        std::string dst;
+    } link;
+    struct {
+        std::string protocol;
+        std::string src;
+        std::string dst;
+    } network;
+    struct {
+        std::string protocol;
+        std::string src;
+        std::string dst;
+    } transport;
+    struct {
+        std::string protocol;
+        std::string message;
+        std::vector<struct RouteRecord> records;
+    } rip;
+};
+
 class Sniffer {
     public:
         Sniffer(std::string ifce) {
@@ -129,27 +169,21 @@ class Sniffer {
             if(status == -1) printErrorAndExit(pcap_geterr(mhandle), 3);
         }
 
-        void listen() {
+        Packet listen() {
             struct pcap_pkthdr* header;
             const u_char * data;
             int status;
-
-            status = pcap_next_ex(mhandle, &header, &data);
-            if(status == 1) { // received
-                if(header->len < ethHdrSize+ipv4HdrSize+udpHdrSize+ripHdrSize+ripPLHdrSize) {
-                    std::cerr << "Broken packet!\n";
-                    return;
-                }
-                //std::cerr << header->len << " B, but only " << header->caplen << " B captured.\n";
-                std::cerr << "-------------------------\n";
-                parseRIP(header, data);
-                std::cerr << "-------------------------\n\n";
-            }
-            else if(status == 0) {} // packets are being read
-            else if(status == PCAP_ERROR) { printErrorAndExit(pcap_geterr(mhandle), 4); }
+            
+            do {
+                status = pcap_next_ex(mhandle, &header, &data);
+                if(status == PCAP_ERROR) { printErrorAndExit(pcap_geterr(mhandle), 4); }
+                if(header->len < ethHdrSize+ipv4HdrSize+udpHdrSize+ripHdrSize) { Packet p; p.valid = false; return p; }
+            } while(status != 0);
+            
+            return parseRIP(header, data);
         }
 
-        void parseRIP(struct pcap_pkthdr*, const u_char*);
+        Packet parseRIP(struct pcap_pkthdr*, const u_char*);
 
         /**
          * @brief Destructor
@@ -190,16 +224,6 @@ std::string command2str(__u8 c) {
         default: return "Unknown command";
     }
 }
-std::string version2str(__u8 v, u_short port) {
-    if(port == 520){
-        if(v == 0x1) { return "RIPv1"; }
-        else if(v == 0x2) { return "RIPv2"; }
-    }   
-    else if(port == 521) {
-        if(v == 0x1) { return "RIPng"; }
-    }
-    return "Unsupported RIP version";
-}
 
 #define EtherType_IPv4 0x0008
 #define EtherType_IPv6 0xDD86
@@ -208,67 +232,125 @@ std::string version2str(__u8 v, u_short port) {
 #define Protocol_UDP 7
 #define Protocol_RIPv2	0x11
 
-void Sniffer::parseRIP(struct pcap_pkthdr* header, const u_char* data) {
+#define VersionRIPv1 0x1
+#define VersionRIPv2 0x2
+#define VersionRIPng 0x1
 
-    /* ----------------- ETHERNET ------------------- */
+Packet Sniffer::parseRIP(struct pcap_pkthdr* header, const u_char* data) {
+
+    Packet p;
     size_t datasize = header->caplen;
 
+    /* ----------------- ETHERNET ------------------- */
     struct ether_header* eth = (struct ether_header*)data;
+    p.link.src = mac2str(eth->ether_shost);
+    p.link.dst = mac2str(eth->ether_dhost);
+    p.link.protocol = "Ethernet";
     data += ethHdrSize;
     datasize -= ethHdrSize;
 
-    std::string macsrc = mac2str(eth->ether_shost);
-    std::string macdst = mac2str(eth->ether_dhost);
-    std::cerr << macsrc << " -> " << macdst << "\n";
-
     /* ----------------- IP ------------------- */
-    std::string ipsrc, ipdst;
-    std::string networkprotocol;
-    
-    if(eth->ether_type == EtherType_IPv4) { // IPv4
-        networkprotocol = "IPv4";
+    if(eth->ether_type == EtherType_IPv4) {         // IPv4
         struct ip *ip = (struct ip *)data;
-        ipsrc = ip2str( &ip->ip_src );
-        ipdst = ip2str( &ip->ip_dst );
-
+        p.network.protocol = "IPv4";
+        p.network.src = ip2str( &ip->ip_src );
+        p.network.dst = ip2str( &ip->ip_dst );
         data += ipv4HdrSize;
         datasize -= ipv4HdrSize;
-    } else if(eth->ether_type == EtherType_IPv6) { // IPv6
-        networkprotocol = "IPv6";
-        struct ip6_hdr *ip = (struct ip6_hdr *)data;
-        ipsrc = ip2str( &ip->ip6_src );
-        ipdst = ip2str( &ip->ip6_dst );
 
+    } else if(eth->ether_type == EtherType_IPv6) {  // IPv6
+        struct ip6_hdr *ip = (struct ip6_hdr *)data;
+        p.network.protocol = "IPv6";
+        p.network.src = ip2str( &ip->ip6_src );
+        p.network.dst = ip2str( &ip->ip6_dst );
         data += ipv6HdrSize;
         datasize -= ipv6HdrSize;
+
     } else {
-        std::cerr << "Unsupported EtherType!\n";
-        return;
+        p.valid = false;
+        return p;
     }
-    std::cerr << networkprotocol << ": " << ipsrc << " -> " << ipdst << "\n";
 
     /* ----------------- UDP ------------------- */
     struct udphdr * udp = (struct udphdr*)data;
-    u_short portsrc = ntohs(udp->uh_sport);
-    u_short portdst = ntohs(udp->uh_dport);
-
-
-    std::cerr << portsrc << " -> " << portdst << "\n";
-
+    p.transport.protocol = "UDP";
+    p.transport.src = std::to_string(ntohs(udp->uh_sport));
+    p.transport.dst = std::to_string(ntohs(udp->uh_dport));
     data += udpHdrSize;
     datasize -= udpHdrSize;
 
-    /* ----------------- RIPv2 ------------------- */
-    struct riphdr * rip = (struct riphdr*)data;
-    std::string command = command2str( rip->comm );
-    std::string version = version2str( rip->version, portdst);
-
-    std::cerr << version << ": " << command << "\n";
-
+    /* ------------------ RIP -------------------- */
+    struct RIPHdr * rip = (struct RIPHdr*)data;
+    p.rip.message = command2str( rip->comm );
     data += ripHdrSize;
     datasize -= ripHdrSize;
-    
+
+    /* -------------- RIPv1, RIPv2 --------------- */
+    if(p.transport.dst == "520") {
+        // version
+        if(rip->version == VersionRIPv1) p.rip.protocol = "RIPv1";
+        else if(rip->version == VersionRIPv2) p.rip.protocol = "RIPv2";
+        else { p.valid = false; return p; }
+
+        if((datasize % ripRRSize) != 0) { p.valid = false; return p; }
+        while(datasize > 0) {
+            struct RIPRouteRecord* riprecord = (struct RIPRouteRecord*)data;
+            RouteRecord route;
+            route.address = ip2str(&riprecord->address);
+            route.mask = ip2str(&riprecord->res3);
+            route.route = "???";
+            route.metric = std::to_string(riprecord->metric);
+            p.rip.records.push_back(route);
+
+            data += ripRRSize;
+            datasize -= ripRRSize;
+        }
+
+    /* ----------------- RIPng ------------------- */
+    } else if(p.transport.dst == "521") {
+        if(rip->version == VersionRIPng) p.rip.protocol = "RIPng";
+        else { p.valid = false; return p;}
+
+        if((datasize % ripngRRSize) != 0) { p.valid = false; return p; }
+        while(datasize > 0) {
+            struct RIPngRouteRecord* riprecord = (struct RIPngRouteRecord*)data;
+            RouteRecord route;
+            route.address = ip2str(&riprecord->dst);
+            route.mask = std::to_string(riprecord->prefix);
+            route.route = "???";
+            route.metric = std::to_string(riprecord->metric);
+            p.rip.records.push_back(route);
+
+            data += ripngRRSize;
+            datasize -= ripngRRSize;
+        }
+    }
+
+    return p;
 }
+
+//struct RouteRecord {
+//    std::string address;
+//    std::string mask;
+//    std::string route;
+//    std::string metric;
+//} records;
+
+//struct RIPngRouteRecord {
+//	struct in6_addr	rip6_dest;
+//	u_int16_t	rip6_tag;
+//	u_int8_t	rip6_plen;
+//	u_int8_t	rip6_metric;
+//};
+
+//struct RIPRouteRecord {
+//	__u16	family;
+//	__u16	res2;
+//	__u32	address;
+//	__u32	res3;
+//	__u32	res4;
+//	__u32	metric;
+//}; 
 
 // struct riphdr {
 //	__u8	comm;
