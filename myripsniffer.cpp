@@ -28,6 +28,7 @@ int main(int argc, char *argv[]) {
     Sniffer s(ifce);
     
     // Listen
+    std::cerr << "Listening...\n";
     do {
         s.listen();
     } while(true);
