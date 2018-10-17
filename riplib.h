@@ -11,6 +11,7 @@
 #include <arpa/inet.h>
 #include <vector>
 
+#include "mynetinet.h"
 
 // inspired by http://www.tcpdump.org/pcap.html
 // inspired by https://www.devdungeon.com/content/using-libpcap-c
@@ -20,62 +21,13 @@
  * @param error         PCAP error code.
  * @param errcode       Error code.
  */
-void printErrorAndExit(int error, int errcode) {
-    std::cerr << pcap_statustostr(error) << "\n";
-    exit(errcode);
-}
+void printErrorAndExit(int, int);
 /**
  * @brief Prints error and exits.
  * @param error         String to print.
  * @param errcode       Error code.
  */
-void printErrorAndExit(std::string error, int errcode) {
-    std::cerr << error << "\n";
-    exit(errcode);
-}
-
-struct RIPngHeader {
-    uint8_t command;
-    uint8_t version;
-    uint16_t zero;
-    struct in6_addr addr;
-    uint16_t route_tag;
-    uint8_t prefix_length;
-    uint8_t metric;
-};
-
-// https://github.com/lohith-bellad/RIPv2/blob/master/router.h
-// RIP payload structure 
-struct RIPRouteRecord {
-	__u16	family;
-	__u16	res2;
-	in_addr	address;
-	in_addr	res3;
-	__u32	res4;
-	__u32	metric;
-}; 
-
-struct RIPngRouteRecord {
-	struct in6_addr	dst;
-	u_int16_t	tag;
-	u_int8_t	prefix;
-	u_int8_t	metric;
-};
-
-// RIP header structure 
-struct RIPHdr {
-	__u8	comm;
-	__u8	version;
-	__u16	res1;
-};
-
-constexpr size_t ethHdrSize = sizeof(struct ether_header);
-constexpr size_t ipv4HdrSize = sizeof(struct ip);
-constexpr size_t ipv6HdrSize = sizeof(struct ip6_hdr);
-constexpr size_t udpHdrSize = sizeof(struct udphdr);
-constexpr size_t ripHdrSize = sizeof(struct RIPHdr);
-constexpr size_t ripRRSize = sizeof(struct RIPRouteRecord);
-constexpr size_t ripngRRSize = sizeof(struct RIPngRouteRecord);
+void printErrorAndExit(std::string, int);
 
 
 /**
@@ -110,101 +62,133 @@ class Device {
         pcap_t *mhandle; /**< Handle. */
 };
 
+/**
+ * @brief Route Table Record.
+ */
 struct RouteRecord {
-    std::string address;
-    std::string mask;
-    std::string route;
-    std::string metric;
-} records;
-
+    std::string address;/**< Address (IPv4, IPv6). */
+    std::string mask;   /**< Mask / Prefix. */
+    std::string route;  /**< Route. */
+    std::string metric; /**< Metric. */
+};
+/**
+ * @brief Packet data class.
+ */
 struct Packet {
-    bool valid = true;
+    bool valid = true;  /**< Valid packet. */
+
+    /** @brief L2 Data. */
     struct {
-        std::string protocol;
-        std::string src;
-        std::string dst;
+        std::string protocol;   /**< L2 Protocol. */
+        std::string src;        /**< L2 Source Address. */
+        std::string dst;        /**< L2 Destination Address. */
     } link;
+    /** @brief L3 Data. */
     struct {
-        std::string protocol;
-        std::string src;
-        std::string dst;
+        std::string protocol;   /**< L3 Protocol. */
+        std::string src;        /**< L3 Source Address. */
+        std::string dst;        /**< L3 Destination Address. */
     } network;
+    /** @brief L4 Data. */
     struct {
-        std::string protocol;
-        std::string src;
-        std::string dst;
+        std::string protocol;   /**< L4 Protocol. */
+        std::string src;        /**< L4 Source Address. */
+        std::string dst;        /**< L4 Destination Address. */
     } transport;
+    /** @brief RIP Data. */
     struct {
-        std::string protocol;
-        std::string message;
-        std::vector<struct RouteRecord> records;
+        std::string protocol;   /**< RIP Protocol. */
+        std::string message;    /**< RIP Message. */
+        std::vector<struct RouteRecord> records;    /**< Route Table Records. */
     } rip;
 };
 
 class Sniffer {
     public:
-        Sniffer(std::string ifce) {
-            char errbuf[PCAP_ERRBUF_SIZE];
-            int status;
-
-            // get ip and mask
-            bpf_u_int32 mask, ip;
-            status = pcap_lookupnet(ifce.c_str(), &ip, &mask, errbuf);
-            if(status == -1) {
-                std::cerr << errbuf << "\n";
-                ip = mask = 0;
-            }
-
-            // open session
-            mhandle = pcap_open_live(ifce.c_str(), BUFSIZ, true, 1000, errbuf);
-            if(mhandle == NULL) printErrorAndExit(errbuf, 2);
-
-            // compile filter
-            char netexpr[] = "port 520 or 521";
-            status = pcap_compile(mhandle, &mfilter, netexpr, 0, ip);
-            if(status == -1) printErrorAndExit(errbuf, 3);
-
-            // set filter onto sniffer
-            status = pcap_setfilter(mhandle, &mfilter);
-            if(status == -1) printErrorAndExit(pcap_geterr(mhandle), 3);
-        }
-
-        Packet listen() {
-            struct pcap_pkthdr* header;
-            const u_char * data;
-            int status;
-            
-            do {
-                status = pcap_next_ex(mhandle, &header, &data);
-                if(status == PCAP_ERROR) { printErrorAndExit(pcap_geterr(mhandle), 4); }
-                if(header->len < ethHdrSize+ipv4HdrSize+udpHdrSize+ripHdrSize) { Packet p; p.valid = false; return p; }
-            } while(status != 0);
-            
-            return parseRIP(header, data);
-        }
-
-        Packet parseRIP(struct pcap_pkthdr*, const u_char*);
+        /**
+         * @brief Constructor.
+         * @param ifce      Interface to sniff on.
+         */
+        Sniffer(std::string);
+        /**
+         * @brief Listens on the interface. Returns first RIP packet caught.
+         * @returns Caught packet.
+         */
+        Packet listen();
+        
 
         /**
          * @brief Destructor
          */
         ~Sniffer() { pcap_close(mhandle); }
     private:
-        pcap_t *mhandle;
-        struct bpf_program mfilter;
+        pcap_t *mhandle;            /**< Libpcap handle to the interface. */
+        struct bpf_program mfilter; /**< Packet filter. */
+
+        /**
+         * @brief Parses packet. Returns Packet object.
+         * @param header        Header of data.
+         * @param data          Data of the packet.
+         * @returns Packet object.
+         */
+        Packet parseRIP(struct pcap_pkthdr*, const u_char*);
 };
+
+
+
+Sniffer::Sniffer(std::string ifce) {
+    char errbuf[PCAP_ERRBUF_SIZE];
+    int status;
+    // get ip and mask
+    bpf_u_int32 mask, ip;
+    status = pcap_lookupnet(ifce.c_str(), &ip, &mask, errbuf);
+    if(status == -1) {
+        //std::cerr << errbuf << "\n";
+        ip = mask = 0;
+    }
+    // open session
+    mhandle = pcap_open_live(ifce.c_str(), BUFSIZ, true, 1000, errbuf);
+    if(mhandle == NULL) printErrorAndExit(errbuf, 2);
+    // compile filter
+    char netexpr[] = "port 520 or 521";
+    status = pcap_compile(mhandle, &mfilter, netexpr, 0, ip);
+    if(status == -1) printErrorAndExit(errbuf, 3);
+    // set filter onto sniffer
+    status = pcap_setfilter(mhandle, &mfilter);
+    if(status == -1) printErrorAndExit(pcap_geterr(mhandle), 3);
+}
+
+constexpr size_t ethHdrSize = sizeof(struct ether_header);
+constexpr size_t ipv4HdrSize = sizeof(struct ip);
+constexpr size_t ipv6HdrSize = sizeof(struct ip6_hdr);
+constexpr size_t udpHdrSize = sizeof(struct udphdr);
+constexpr size_t ripHdrSize = sizeof(struct RIPHdr);
+constexpr size_t ripRRSize = sizeof(struct RIPRouteRecord);
+constexpr size_t ripngRRSize = sizeof(struct RIPngRouteRecord);
+
+Packet Sniffer::listen() {
+    struct pcap_pkthdr* header;
+    const u_char * data;
+    int status;
+    do {
+        status = pcap_next_ex(mhandle, &header, &data);
+        if(status == PCAP_ERROR) { printErrorAndExit(pcap_geterr(mhandle), 4); }
+        else if(header->len < ethHdrSize+ipv4HdrSize+udpHdrSize+ripHdrSize) { status = 0; continue; }
+    } while(status != 1);
+    return parseRIP(header, data);
+}
 
 std::string mac2str(u_int8_t* mac) {
     char tmp[18];
     snprintf(tmp, sizeof(tmp), "%02x:%02x:%02x:%02x:%02x:%02x", mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
     return std::string(tmp);
 }
-std::string ip2str(struct in_addr* ip) {
-    return std::string( inet_ntoa(*ip) );
+std::string ip2str(struct in_addr ip) {
+    return std::string( inet_ntoa(ip) );
 }
-std::string ip2str(struct in6_addr * ip) {
+std::string ip2str(struct in6_addr ip) {
     char buffer[INET6_ADDRSTRLEN];
-    if( inet_ntop(AF_INET6, (void*)ip->s6_addr, buffer, sizeof(buffer)) == NULL )
+    if( inet_ntop(AF_INET6, (void*)ip.s6_addr, buffer, sizeof(buffer)) == NULL )
         printErrorAndExit("Invalid IPv6 address.", 7);
     return std::string(buffer);
 }
@@ -253,16 +237,16 @@ Packet Sniffer::parseRIP(struct pcap_pkthdr* header, const u_char* data) {
     if(eth->ether_type == EtherType_IPv4) {         // IPv4
         struct ip *ip = (struct ip *)data;
         p.network.protocol = "IPv4";
-        p.network.src = ip2str( &ip->ip_src );
-        p.network.dst = ip2str( &ip->ip_dst );
+        p.network.src = ip2str( ip->ip_src );
+        p.network.dst = ip2str( ip->ip_dst );
         data += ipv4HdrSize;
         datasize -= ipv4HdrSize;
 
     } else if(eth->ether_type == EtherType_IPv6) {  // IPv6
         struct ip6_hdr *ip = (struct ip6_hdr *)data;
         p.network.protocol = "IPv6";
-        p.network.src = ip2str( &ip->ip6_src );
-        p.network.dst = ip2str( &ip->ip6_dst );
+        p.network.src = ip2str( ip->ip6_src );
+        p.network.dst = ip2str( ip->ip6_dst );
         data += ipv6HdrSize;
         datasize -= ipv6HdrSize;
 
@@ -296,10 +280,10 @@ Packet Sniffer::parseRIP(struct pcap_pkthdr* header, const u_char* data) {
         while(datasize > 0) {
             struct RIPRouteRecord* riprecord = (struct RIPRouteRecord*)data;
             RouteRecord route;
-            route.address = ip2str(&riprecord->address);
-            route.mask = ip2str(&riprecord->res3);
+            route.address = ip2str( riprecord->address );
+            route.mask = ip2str( riprecord->res3 );
             route.route = "???";
-            route.metric = std::to_string(riprecord->metric);
+            route.metric = std::to_string( ntohs(riprecord->metric) );
             p.rip.records.push_back(route);
 
             data += ripRRSize;
@@ -315,10 +299,10 @@ Packet Sniffer::parseRIP(struct pcap_pkthdr* header, const u_char* data) {
         while(datasize > 0) {
             struct RIPngRouteRecord* riprecord = (struct RIPngRouteRecord*)data;
             RouteRecord route;
-            route.address = ip2str(&riprecord->dst);
-            route.mask = std::to_string(riprecord->prefix);
+            route.address = ip2str( riprecord->dst );
+            route.mask = std::to_string( riprecord->prefix );
             route.route = "???";
-            route.metric = std::to_string(riprecord->metric);
+            route.metric = std::to_string( ntohs(riprecord->metric) );
             p.rip.records.push_back(route);
 
             data += ripngRRSize;
@@ -401,3 +385,13 @@ Packet Sniffer::parseRIP(struct pcap_pkthdr* header, const u_char* data) {
 //	u_short	ip_sum;			/* checksum */
 //	struct	in_addr ip_src,ip_dst;	/* source and dest address */
 //};
+
+
+void printErrorAndExit(int error, int errcode) {
+    std::cerr << pcap_statustostr(error) << "\n";
+    exit(errcode);
+}
+void printErrorAndExit(std::string error, int errcode) {
+    std::cerr << error << "\n";
+    exit(errcode);
+}

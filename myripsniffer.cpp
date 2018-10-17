@@ -10,9 +10,11 @@ char * ifce = NULL; /**< Interface name. */
 bool showLink = false;
 bool showNetwork = false;
 bool showTransport = false;
+bool verbose = false;
 /* ------------------------------ */
 
-void showUsage() { printErrorAndExit("Usage: ./myripsniffer -i <interface> [-l|--link] [-n|--network] [-t|--transport]", 1); }
+void showUsage() { printErrorAndExit("Usage: ./myripsniffer -i <interface> [-v|--verbose] [-l|--link] [-n|--network] [-t|--transport]", 1); }
+void printPacket(Packet);
 
 /**
  * @brief   Main function.
@@ -37,6 +39,9 @@ int main(int argc, char *argv[]) {
         } else if(!strcmp(argv[it],"-t") || !strcmp(argv[it],"--transport")) {
             if(showTransport) showUsage();
             showTransport = true;
+        } else if(!strcmp(argv[it],"-v") || !strcmp(argv[it],"--verbose")) {
+            if(verbose) showUsage();
+            verbose = true;
         } else showUsage();
     }
     if(ifce == NULL) showUsage();
@@ -47,8 +52,45 @@ int main(int argc, char *argv[]) {
     // Listen
     std::cerr << "Listening...\n";
     do {
-        s.listen();
+        Packet p = s.listen();
+        printPacket(p);
     } while(true);
 
     return 0;
 }
+
+void printPacket(Packet p) {
+    static size_t counter = 1;
+    if(!p.valid) { std::cout << "Invalid packet!\n"; return; }
+    std::cout << "--- " << counter << ") " << p.rip.protocol << " packet\n";
+    if(showLink) {
+        std::cout << "L2 (" << p.link.protocol << "):\t\t" << p.link.src << " -> " << p.link.dst << "\n";
+    }
+    if(showNetwork) {
+        std::cout << "L3 (" << p.network.protocol << "):\t\t" << p.network.src << " -> " << p.network.dst << "\n";
+    }
+    if(showTransport) {
+        std::cout << "L4 (" << p.transport.protocol << "):\t\t" << p.transport.src << " -> " << p.transport.dst << "\n";
+    }
+    std::cout << "L7 (" << p.rip.protocol << "):\t\t" << p.rip.message << "\n";
+    if(verbose) {
+        for(auto& it: p.rip.records) {
+            std::cout << "| " << it.address << "/" << it.mask;
+            for(unsigned x = 0; x < 38-(it.address.size()+it.mask.size()+1); x++) { std::cout << " "; }
+            std::cout << it.route << "\t(" << it.metric << ")\n"; 
+        }
+    } else {
+        if(p.rip.records.size() > 0) { std::cout << "+ Routing Table Data\n"; }
+    }
+    std::cout << "\n\n";
+    counter++;
+    
+}
+
+
+//struct RouteRecord {
+//    std::string address;
+//    std::string mask;
+//    std::string route;
+//    std::string metric;
+//} records;

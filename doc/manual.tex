@@ -172,15 +172,9 @@
 
             \paragraph{RIPng}
                 The RFC 2080 (1997) is a reaction to IPv6. Except of that, it erased support of encryption, that must be covered
-                by IPsec. The structure of packet is in the figure \ref{fig:RIPngheaders}, RIPng header is shown in the figure \ref{fig:RIPngheader}.
+                by IPsec. The structure of packet in the figure \ref{fig:RIPheaders} stays the same as previous versions,
+                RIPng header is shown in the figure \ref{fig:RIPngheader}.
                 \cite{RFC2080} \cite{RFC2081}
-
-                \begin{figure}[h!]
-                    \begin{center}
-                        \includegraphics[width=0.6\textwidth]{ripng_hs.png}
-                        \caption{RIPng protocol packet. \label{fig:RIPngheaders}}
-                    \end{center}
-                \end{figure}
 
                 \begin{figure}[h!]
                     \begin{center}
@@ -214,9 +208,10 @@
             \paragraph{Poison Reverse} 
                 When the router finds out that some route is unreachable, it immediately updates all its neighbors. \cite{RIPJuniper}
                 \cite{RIPGuide} \cite{RIPWikipedia} \cite{computernetworking} \cite{mistrovstvivsitich}
-
+    
+    \newpage
     \section{Implementation}
-        
+
         \subsection{Sniffer}
         
             % program description
@@ -231,10 +226,42 @@
     \section{Application}
         
         \subsection{Testing System Structure}
-            % figure of test system
-            % its description
+            System where the programs were tested had following structure: virtualized Linux Mint on the parent Windows 10. VirtualBox
+            was used as the virtualization engine. As you can see in the figure \ref{fig:VBWinMint}, there are two interfaces. One of them
+            is set to NAT, it is called {\it enp0s3} in the virtualized Linux Mint. The other called {\it enp0s8} in Linux is host only.
+            It is used for the program to listen to.
 
-            % figures with printscreens
+            Inside the Linux Mint there is another VirtualBox installed, which virtualizes FreeBSD used for creating the RIP traffic.
+            All the traffic from the FreeBSD is bridged to the enp0s8 where the sniffer may work with it. You can see the settings
+            in the figure \ref{fig:VBMintBSD}.
+
+            \begin{figure}[h!]
+                \begin{center}
+                    \includegraphics[width=0.50\textwidth]{winmint.png}
+                    \caption{Settings of virtualized Linux Mint in VirtualBox on Windows. \label{fig:VBWinMint}}
+                \end{center}
+            \end{figure}
+
+            \begin{figure}[h!]
+                \begin{center}
+                    \includegraphics[width=0.50\textwidth]{mintifconfig.png}
+                    \caption{Interfaces on Linux Mint. \label{fig:MintIfconfig}}
+                \end{center}
+            \end{figure}
+
+            \begin{figure}[h!]
+                \begin{center}
+                    \includegraphics[width=0.50\textwidth]{mintbsd.png}
+                    \caption{Settings of virtualized FreeBSD in VirtualBox on Linux Mint. \label{fig:VBMintBSD}}
+                \end{center}
+            \end{figure}
+
+            \begin{figure}[h!]
+                \begin{center}
+                    \includegraphics[width=0.80\textwidth]{programming.png}
+                    \caption{Structure of the whole testing system. \label{fig:TestingSystem} \cite{WindowsLogo} \cite{MintLogo} \cite{FreeBSDLogo} \cite{VirtualBoxLogo}}
+                \end{center}
+            \end{figure}
 
         \subsection{Testing}
             % description of testing
