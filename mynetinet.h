@@ -3,6 +3,11 @@
 
 #include <netinet/in.h>
 
+struct RIPAuthHdr {
+	__u16 fill;
+	__u16 type;
+	char password[16];
+};
 
 // RIP header structure 
 struct RIPHdr {
@@ -11,16 +16,6 @@ struct RIPHdr {
 	__u16	res1;
 };
 
-
-struct RIPngHeader {
-    uint8_t command;
-    uint8_t version;
-    uint16_t zero;
-    struct in6_addr addr;
-    uint16_t route_tag;
-    uint8_t prefix_length;
-    uint8_t metric;
-};
 
 // https://github.com/lohith-bellad/RIPv2/blob/master/router.h
 // RIP payload structure 

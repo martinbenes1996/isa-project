@@ -29,6 +29,20 @@ void printErrorAndExit(int, int);
  */
 void printErrorAndExit(std::string, int);
 
+void * generateRIPResponse(struct in6_addr address,
+                           u_int8_t prefix,
+                           u_int8_t metric = 1,
+                           struct in6_addr nexthop = in6_addr{0},
+                           u_int16_t tag = 0);
+
+/*
+./myripresponse -i <rozhraní> -r <IPv6>/[16-128] {-n <IPv6>} {-m [0-16]} {-t [0-65535]}, kde význam parametrů je následující: 
+* -i: <rozhraní> udává rozhraní, ze kterého má být útočný paket odeslán;
+* -r: v <IPv6> je IP adresa podvrhávané sítě a za lomítkem číselná délka masky sítě;
+* -m: následující číslo udává RIP Metriku, tedy počet hopů, implicitně 1;
+* -n: <IPv6> za tímto parametrem je adresa next-hopu pro podvrhávanou routu, implicitně ::;
+* -t: číslo udává hodnotu Router Tagu, implicitně 0.
+*/
 
 /**
  * @brief Cover class for PCAP library.
@@ -68,7 +82,6 @@ class Device {
 struct RouteRecord {
     std::string address;/**< Address (IPv4, IPv6). */
     std::string mask;   /**< Mask / Prefix. */
-    std::string route;  /**< Route. */
     std::string metric; /**< Metric. */
 };
 /**
@@ -99,6 +112,9 @@ struct Packet {
     struct {
         std::string protocol;   /**< RIP Protocol. */
         std::string message;    /**< RIP Message. */
+        bool isAuthentized;     /**< Authentication is present. */
+        std::string authType;   /**< RIP Authentication type. */
+        std::string password;   /**< RIP Authentication password. */
         std::vector<struct RouteRecord> records;    /**< Route Table Records. */
     } rip;
 };
@@ -163,6 +179,7 @@ constexpr size_t ipv4HdrSize = sizeof(struct ip);
 constexpr size_t ipv6HdrSize = sizeof(struct ip6_hdr);
 constexpr size_t udpHdrSize = sizeof(struct udphdr);
 constexpr size_t ripHdrSize = sizeof(struct RIPHdr);
+constexpr size_t ripAuthHdrSize = sizeof(struct RIPAuthHdr);
 constexpr size_t ripRRSize = sizeof(struct RIPRouteRecord);
 constexpr size_t ripngRRSize = sizeof(struct RIPngRouteRecord);
 
@@ -206,6 +223,14 @@ std::string command2str(__u8 c) {
         case 10: return "Update Response";
         case 11: return "Update Acknowledge";
         default: return "Unknown command";
+    }
+}
+std::string authType2str(__u8 at, bool& valid) {
+    switch(at) {
+        case 1: return "IP Route";
+        case 2: return "Simple Password";
+        case 3: return "MD5";
+        default: valid = false; return "Unknown Authentication Type";
     }
 }
 
@@ -275,6 +300,17 @@ Packet Sniffer::parseRIP(struct pcap_pkthdr* header, const u_char* data) {
         if(rip->version == VersionRIPv1) p.rip.protocol = "RIPv1";
         else if(rip->version == VersionRIPv2) p.rip.protocol = "RIPv2";
         else { p.valid = false; return p; }
+        
+        // authentication
+        p.rip.isAuthentized = true;
+        struct RIPAuthHdr * ripAuth = (struct RIPAuthHdr *)data;
+        bool valid = true;
+        p.rip.authType = authType2str( ntohs(ripAuth->type), valid);
+        p.valid = valid;
+        p.rip.password = ripAuth->password;
+        data += ripAuthHdrSize;
+        datasize -= ripAuthHdrSize;
+
 
         if((datasize % ripRRSize) != 0) { p.valid = false; return p; }
         while(datasize > 0) {
@@ -282,8 +318,7 @@ Packet Sniffer::parseRIP(struct pcap_pkthdr* header, const u_char* data) {
             RouteRecord route;
             route.address = ip2str( riprecord->address );
             route.mask = ip2str( riprecord->res3 );
-            route.route = "???";
-            route.metric = std::to_string( ntohs(riprecord->metric) );
+            route.metric = std::to_string( riprecord->metric >> 24 );
             p.rip.records.push_back(route);
 
             data += ripRRSize;
@@ -294,6 +329,7 @@ Packet Sniffer::parseRIP(struct pcap_pkthdr* header, const u_char* data) {
     } else if(p.transport.dst == "521") {
         if(rip->version == VersionRIPng) p.rip.protocol = "RIPng";
         else { p.valid = false; return p;}
+        p.rip.isAuthentized = false;
 
         if((datasize % ripngRRSize) != 0) { p.valid = false; return p; }
         while(datasize > 0) {
@@ -301,8 +337,7 @@ Packet Sniffer::parseRIP(struct pcap_pkthdr* header, const u_char* data) {
             RouteRecord route;
             route.address = ip2str( riprecord->dst );
             route.mask = std::to_string( riprecord->prefix );
-            route.route = "???";
-            route.metric = std::to_string( ntohs(riprecord->metric) );
+            route.metric = std::to_string( riprecord->metric );
             p.rip.records.push_back(route);
 
             data += ripngRRSize;
@@ -313,79 +348,24 @@ Packet Sniffer::parseRIP(struct pcap_pkthdr* header, const u_char* data) {
     return p;
 }
 
-//struct RouteRecord {
-//    std::string address;
-//    std::string mask;
-//    std::string route;
-//    std::string metric;
-//} records;
-
-//struct RIPngRouteRecord {
-//	struct in6_addr	rip6_dest;
-//	u_int16_t	rip6_tag;
-//	u_int8_t	rip6_plen;
-//	u_int8_t	rip6_metric;
-//};
-
-//struct RIPRouteRecord {
-//	__u16	family;
-//	__u16	res2;
-//	__u32	address;
-//	__u32	res3;
-//	__u32	res4;
-//	__u32	metric;
-//}; 
-
-// struct riphdr {
-//	__u8	comm;
-//	__u8	version;
-//	__u16	res1;
-//};
-
-// struct udphdr {
-//	u_short	uh_sport;		/* source port */
-//	u_short	uh_dport;		/* destination port */
-//	u_short	uh_ulen;		/* udp length */
-//	u_short	uh_sum;			/* udp checksum */
-//};
-
-
-//struct ip6_hdr {
-//	union {
-//		struct ip6_hdrctl {
-//			u_int32_t ip6_un1_flow;	/* 20 bits of flow-ID */
-//			u_int16_t ip6_un1_plen;	/* payload length */
-//			u_int8_t  ip6_un1_nxt;	/* next header */
-//			u_int8_t  ip6_un1_hlim;	/* hop limit */
-//		} ip6_un1;
-//		u_int8_t ip6_un2_vfc;	/* 4 bits version, top 4 bits class */
-//	} ip6_ctlun;
-//	struct in6_addr ip6_src;	/* source address */
-//	struct in6_addr ip6_dst;	/* destination address */
-//} __packed;
-
-
-//struct ip {
-//#if BYTE_ORDER == LITTLE_ENDIAN 
-//	u_char	ip_hl:4,		/* header length */
-//		ip_v:4;			/* version */
-//#endif
-//#if BYTE_ORDER == BIG_ENDIAN 
-//	u_char	ip_v:4,			/* version */
-//		ip_hl:4;		/* header length */
-//#endif
-//	u_char	ip_tos;			/* type of service */
-//	short	ip_len;			/* total length */
-//	u_short	ip_id;			/* identification */
-//	short	ip_off;			/* fragment offset field */
-//#define	IP_DF 0x4000			/* dont fragment flag */
-//#define	IP_MF 0x2000			/* more fragments flag */
-//	u_char	ip_ttl;			/* time to live */
-//	u_char	ip_p;			/* protocol */
-//	u_short	ip_sum;			/* checksum */
-//	struct	in_addr ip_src,ip_dst;	/* source and dest address */
-//};
-
+void * generateRIPResponse(struct in6_addr address,
+                           u_int8_t prefix,
+                           u_int8_t metric,
+                           struct in6_addr nexthop,
+                           u_int16_t tag) {
+    static unsigned char mem[ripHdrSize + ripngRRSize];
+    struct RIPHdr *p = (struct RIPHdr*)mem;
+    struct RIPngRouteRecord *rr = (struct RIPngRouteRecord *)(mem + ripHdrSize);
+    p->comm = 2;
+    p->version = VersionRIPng;
+    p->res1 = 0;
+    rr->dst = address;
+    rr->tag = tag;
+    rr->prefix = prefix;
+    rr->metric = metric;
+    (void)nexthop;
+    return (void *)mem;
+}
 
 void printErrorAndExit(int error, int errcode) {
     std::cerr << pcap_statustostr(error) << "\n";

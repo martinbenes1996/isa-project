@@ -9,12 +9,17 @@
 
 /* ------------------------------------------------------------- */
 const char * ifce = NULL;   /**< Interface name.*/
-int addr[4] = {-1,};        /**< Address of the fake network. */
-int mask = -1;              /**< Mask of the fake network. */
-int nexthop[4] = {-1,};     /**< Address of fake route next-hop. */
-int metric = -1;            /**< Hop-count. */
-int rttag = -1;             /**< Route tag. */
+struct in6_addr addr;        /**< Address of the fake network. */
+u_int8_t mask;              /**< Mask of the fake network. */
+struct in6_addr nexthop;     /**< Address of fake route next-hop. */
+u_int8_t metric;            /**< Hop-count. */
+u_int16_t rttag;             /**< Route tag. */
 const char * passwd = NULL; /**< Password. */
+
+bool givenAddr = false;
+bool givenNextHop = false;
+bool givenMetric = false;
+bool givenRtTag = false;
 /* ------------------------------------------------------------- */
 
 /**
@@ -93,34 +98,31 @@ int main(int argc, char *argv[]) {
         
             // -r
             else if( !strcmp(argv[i],"-r") ) {
-                if(addr[0] != -1) printUsageAndExit();
-                if(sscanf(argv[i+1], "%d.%d.%d.%d/%d", &addr[0], &addr[1], &addr[2], &addr[3], &mask) != 5) printUsageAndExit();
-                if( !inChar(addr[0]) || !inChar(addr[1]) || !inChar(addr[2]) || !inChar(addr[3]) || mask < 8 || mask > 30 ) printUsageAndExit();
-                // prevents appendix
-                char pom[19];
-                sprintf(pom, "%d.%d.%d.%d/%d", addr[0], addr[1], addr[2], addr[3], mask);
-                if( strcmp(pom,argv[i+1]) ) printUsageAndExit();
+                if( givenAddr ) printUsageAndExit();
+                //char * addr, * 
+                if(inet_pton(AF_INET6, argv[i+1], &addr) != 1) printUsageAndExit();
+                // ...
+                givenAddr = true;
             }
             // -n
             else if( !strcmp(argv[i],"-n") ) {
-                if(nexthop[0] != -1) printUsageAndExit();
-                if(sscanf(argv[i+1], "%d.%d.%d.%d", &nexthop[0], &nexthop[1], &nexthop[2], &nexthop[3]) != 4) printUsageAndExit();
-                if( !inChar(nexthop[0]) || !inChar(nexthop[1]) || !inChar(nexthop[2]) || !inChar(nexthop[3]) ) printUsageAndExit();
-                // prevents appendix
-                char pom[16];
-                sprintf(pom, "%d.%d.%d.%d", nexthop[0], nexthop[1], nexthop[2], nexthop[3]);
-                if( strcmp(pom,argv[i+1]) ) printUsageAndExit();
+                if( givenNextHop ) printUsageAndExit();
+                if(inet_pton(AF_INET6, argv[i+1], &nexthop) != 1) printUsageAndExit();
+                // ...
+                givenNextHop = true;
             }
 
             // -m
             else if( !strcmp(argv[i],"-m") ) {
-                if(metric != -1) printUsageAndExit();
+                if( givenMetric ) printUsageAndExit();
                 else metric = parseInt(argv[i+1], [](int x){return (x>=0)&&(x<=16);} );
+                givenMetric = true;
             }
             // -t
             else if( !strcmp(argv[i],"-t") ) {
-                if(rttag != -1) printUsageAndExit();
+                if( givenRtTag ) printUsageAndExit();
                 else rttag = parseInt(argv[i+1], [](int x){return (x>=0)&&(x<=65535);} );
+                givenRtTag = true;
             }
             
             // other
@@ -128,24 +130,29 @@ int main(int argc, char *argv[]) {
         }
 
         // set default
-        if(addr[0] == -1) printUsageAndExit();
-        if(metric == -1) metric = 1;
-        if(nexthop[0] == -1) nexthop[0] = nexthop[1] = nexthop[2] = nexthop[3] = 0;
-        if(rttag == -1) rttag = 0;
-        if(passwd == NULL) passwd = "";
-        if(ifce == NULL) ifce = ""; // ???
+        if( !givenAddr ) printUsageAndExit();
+        if( !givenMetric ) metric = 1;
+        if( !givenNextHop ) inet_pton(AF_INET6, "::", &nexthop);
+        if( !givenRtTag ) rttag = 0;
+        if( passwd == NULL ) passwd = "";
+        if( ifce == NULL ) ifce = ""; // ???
+
+        void * p = generateRIPResponse(addr, mask, metric, nexthop, rttag);
+        RIPHdr * hdr = (RIPHdr *)p;
+        std::cout << hdr->comm << " " << hdr->version << " " << hdr->res1 << "\n";
+
     }
 
     // incorrect count - fail
     else printUsageAndExit();
 
 
-    std::cout << "Interface: " << ifce << "\n";
-    std::cout << "Address: " << addr[0] << "." << addr[1] << "." << addr[2] << "." << addr[3] << "/" << mask << "\n";
-    std::cout << "Next hop: " << nexthop[0] << "." << nexthop[1] << "." << nexthop[2] << "." << nexthop[3] << "\n";
-    std::cout << "Metric: " << metric << "\n";
-    std::cout << "Route Tag: " << rttag << "\n";
-    std::cout << "Password: " << passwd << "\n";
+    //std::cout << "Interface: " << ifce << "\n";
+    //std::cout << "Address: " << addr[0] << "." << addr[1] << "." << addr[2] << "." << addr[3] << "/" << mask << "\n";
+    //std::cout << "Next hop: " << nexthop[0] << "." << nexthop[1] << "." << nexthop[2] << "." << nexthop[3] << "\n";
+    //std::cout << "Metric: " << metric << "\n";
+    //std::cout << "Route Tag: " << rttag << "\n";
+    //std::cout << "Password: " << passwd << "\n";
 
 
 }

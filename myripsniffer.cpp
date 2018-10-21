@@ -28,6 +28,7 @@ int main(int argc, char *argv[]) {
     // -i
     for(int it = 1; it < argc; it++) {
         if(!strcmp(argv[it], "-i")) {
+            if(ifce != NULL) showUsage();
             if(it == argc-1) showUsage();
             ifce = argv[++it];
         } else if(!strcmp(argv[it],"-l") || !strcmp(argv[it],"--link")) {
@@ -50,7 +51,8 @@ int main(int argc, char *argv[]) {
     Sniffer s(ifce);
     
     // Listen
-    std::cerr << "Listening...\n";
+    std::cout << "Welcome to My RIP Sniffer!\n";
+    std::cout << "Showing RIP traffic on the interface \"" << ifce << "\":\n\n";
     do {
         Packet p = s.listen();
         printPacket(p);
@@ -62,7 +64,7 @@ int main(int argc, char *argv[]) {
 void printPacket(Packet p) {
     static size_t counter = 1;
     if(!p.valid) { std::cout << "Invalid packet!\n"; return; }
-    std::cout << "--- " << counter << ") " << p.rip.protocol << " packet\n";
+    std::cout << "(" << counter << ") " << p.rip.protocol << " packet\n";
     if(showLink) {
         std::cout << "L2 (" << p.link.protocol << "):\t\t" << p.link.src << " -> " << p.link.dst << "\n";
     }
@@ -74,11 +76,18 @@ void printPacket(Packet p) {
     }
     std::cout << "L7 (" << p.rip.protocol << "):\t\t" << p.rip.message << "\n";
     if(verbose) {
+        if(p.rip.isAuthentized) {
+            std::cout << "Authentized with " << p.rip.authType
+                      << " (password: \"" << p.rip.password << "\").\n";
+        }
+
+        std::cout << "Address / Subnet prefix or mask       Hop count\n";
         for(auto& it: p.rip.records) {
             std::cout << "| " << it.address << "/" << it.mask;
             for(unsigned x = 0; x < 38-(it.address.size()+it.mask.size()+1); x++) { std::cout << " "; }
-            std::cout << it.route << "\t(" << it.metric << ")\n"; 
+            std::cout << it.metric << "\n"; 
         }
+
     } else {
         if(p.rip.records.size() > 0) { std::cout << "+ Routing Table Data\n"; }
     }
@@ -86,11 +95,3 @@ void printPacket(Packet p) {
     counter++;
     
 }
-
-
-//struct RouteRecord {
-//    std::string address;
-//    std::string mask;
-//    std::string route;
-//    std::string metric;
-//} records;

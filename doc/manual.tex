@@ -13,6 +13,9 @@
 \usepackage[margin=100pt]{geometry} 
 \usepackage{graphicx}   % Import pictures
 \usepackage{caption}
+\usepackage{listings}
+\usepackage{multicol}
+
 \usepackage[backend=biber, sorting=none]{biblatex}
 
 % references (BiBTeX)
@@ -213,57 +216,114 @@
     \section{Implementation}
 
         \subsection{Sniffer}
-        
-            % program description
-            % process of work
+            First part of project is sniffer, that listens on the given interface and catches RIP communication coming through.
+            It uses {\it libpcap} library. The usage of the program is:
+            \begin{lstlisting}[language=sh, basicstyle=\tiny]
+./myripsniffer -i <interface> [-v|--verbose] [-l|--link] [-n|--network] [-t|--transport]
+            \end{lstlisting}
+
+            The -i parameter is given by task. It specifies the interface program listens to. The -l/-n/-t parameters show
+            additional information in the display about link/network/transport layer. The -v parameter shows full routing
+            informations sent by RIP protocol. You can see full outputs in the figures \ref{fig:MyRipSnifferBrief} and \ref{fig:MyRipSniffer}.
+
+            Whole using of {\it libpcap} is covered in {\it riplib.h}. There is class Sniffer. In constructor, it takes interface
+            name. If method {\it listen()} is called on its instance, the program will start to listen on the interface, until
+            the RIP packet is caught. {\it Packet} object is returned then inluding all relevant data as strings. The format
+            of output is a matter of caller.
             
         \subsection{Fake Responder}
         
+
             % program description
             % process of work
     
-    
+    \newpage
     \section{Application}
         
         \subsection{Testing System Structure}
-            System where the programs were tested had following structure: virtualized Linux Mint on the parent Windows 10. VirtualBox
-            was used as the virtualization engine. As you can see in the figure \ref{fig:VBWinMint}, there are two interfaces. One of them
-            is set to NAT, it is called {\it enp0s3} in the virtualized Linux Mint. The other called {\it enp0s8} in Linux is host only.
-            It is used for the program to listen to.
+            System where the programs were tested had following structure shown in the figure \ref{fig:TestingSystem}: virtualized Linux Mint
+            on the parent Windows 10. VirtualBox was used as the virtualization engine. As you can see in the figure \ref{fig:VBWinMint},
+            there are two interfaces. One of them is set to NAT, it is called {\it enp0s3} in the virtualized Linux Mint. The other called
+            {\it enp0s8} in Linux is host only. It is used for the program to listen to.
 
             Inside the Linux Mint there is another VirtualBox installed, which virtualizes FreeBSD used for creating the RIP traffic.
             All the traffic from the FreeBSD is bridged to the enp0s8 where the sniffer may work with it. You can see the settings
-            in the figure \ref{fig:VBMintBSD}.
+            in the figures \ref{fig:MintIfconfig} and \ref{fig:VBMintBSD}.
 
             \begin{figure}[h!]
                 \begin{center}
-                    \includegraphics[width=0.50\textwidth]{winmint.png}
+                    \includegraphics[width=0.70\textwidth]{winmint.png}
                     \caption{Settings of virtualized Linux Mint in VirtualBox on Windows. \label{fig:VBWinMint}}
                 \end{center}
             \end{figure}
 
             \begin{figure}[h!]
                 \begin{center}
-                    \includegraphics[width=0.50\textwidth]{mintifconfig.png}
+                    \includegraphics[width=0.45\textwidth]{mintifconfig.png}
                     \caption{Interfaces on Linux Mint. \label{fig:MintIfconfig}}
                 \end{center}
             \end{figure}
 
             \begin{figure}[h!]
                 \begin{center}
-                    \includegraphics[width=0.50\textwidth]{mintbsd.png}
+                    \includegraphics[width=0.70\textwidth]{mintbsd.png}
                     \caption{Settings of virtualized FreeBSD in VirtualBox on Linux Mint. \label{fig:VBMintBSD}}
                 \end{center}
             \end{figure}
 
             \begin{figure}[h!]
                 \begin{center}
-                    \includegraphics[width=0.80\textwidth]{programming.png}
+                    \includegraphics[width=0.70\textwidth]{programming.png}
                     \caption{Structure of the whole testing system. \label{fig:TestingSystem} \cite{WindowsLogo} \cite{MintLogo} \cite{FreeBSDLogo} \cite{VirtualBoxLogo}}
                 \end{center}
             \end{figure}
-
+        
+        \newpage
         \subsection{Testing}
+
+            \begin{figure}[h!]
+                \begin{center}
+                    \includegraphics[width=0.45\textwidth]{snifferoutput.png}
+                    \caption{Verbose output of myripsniffer. \label{fig:MyRipSniffer}}
+                \end{center}
+            \end{figure}
+
+            \begin{figure}[h!]
+                \begin{center}
+                    \includegraphics[width=0.45\textwidth]{snifferoutputbrief.png}
+                    \caption{Output of myripsniffer. \label{fig:MyRipSnifferBrief}}
+                \end{center}
+            \end{figure}
+
+            Using the sniffer, there were discovered routes for RIPv2 (table \ref{tab:ripv2routingdata})
+            and RIPng (table \ref{tab:ripngroutingdata}).
+
+            \begin{table}[h!]
+                \begin{center}
+                \begin{tabular}{|lcc|} \hline
+                    Address      & Mask          & Hop Count \\ \hline
+                    10.52.57.0   & 255.255.255.0 & 1 \\
+                    10.101.101.0 & 255.255.255.0 & 1 \\
+                    10.110.208.0 & 255.255.255.0 & 1 \\
+                    10.202.115.0 & 255.255.255.0 & 1 \\ \hline
+                \end{tabular}
+                \caption{RIPv2 Routing Table Data. \label{tab:ripv2routingdata}}
+                \end{center}
+            \end{table}
+
+            \begin{table}[h!]
+                \begin{center}
+                \begin{tabular}{|lcc|} \hline
+                    Address         & Subnet Prefix & Hop Count \\ \hline
+                    fd00::          & 64            & 1 \\
+                    fd00:e1:35e8::  & 64            & 1 \\
+                    fd00:fe:26aa::  & 64            & 1 \\
+                    fd00:974:62::   & 64            & 1 \\ 
+                    fd00:b94:167d:: & 64            & 1 \\ \hline
+                \end{tabular}
+                \caption{RIPv2 Routing Table Data. \label{tab:ripngroutingdata}}
+                \end{center}
+            \end{table}
             % description of testing
             % figure with printscreens from Wireshark
     
