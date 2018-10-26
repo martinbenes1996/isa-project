@@ -360,7 +360,7 @@ void * generateRIPResponse(struct in6_addr address,
     p->version = VersionRIPng;
     p->res1 = 0;
     rr->dst = address;
-    rr->tag = tag;
+    rr->tag = htons(tag);
     rr->prefix = prefix;
     rr->metric = metric;
     (void)nexthop;
