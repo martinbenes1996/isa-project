@@ -7,6 +7,7 @@
 #include <sys/ioctl.h>
 #include <net/if.h>
 #include <string.h>
+#include <unistd.h>
 
 #include "riplib.h"
 
@@ -141,7 +142,6 @@ int main(int argc, char *argv[]) {
             
         // other
         else printUsageAndExit();
-    
     }
 
     // set default
@@ -179,6 +179,10 @@ int main(int argc, char *argv[]) {
         return errno;
     }
 
-    sendto(fd, p, packetsize, 0, (struct sockaddr*)&address, sizeof address);
+    do {
+        sendto(fd, p, packetsize, 0, (struct sockaddr*)&address, sizeof address);
+        sleep(28);
+    } while(true);
+    
 
 }

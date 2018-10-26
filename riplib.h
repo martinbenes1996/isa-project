@@ -353,17 +353,34 @@ void * generateRIPResponse(struct in6_addr address,
                            u_int8_t metric,
                            struct in6_addr nexthop,
                            u_int16_t tag) {
-    static unsigned char mem[ripHdrSize + ripngRRSize];
+    // memory & header pointers
+    static unsigned char mem[ripHdrSize + /*2**/ripngRRSize];
     struct RIPHdr *p = (struct RIPHdr*)mem;
-    struct RIPngRouteRecord *rr = (struct RIPngRouteRecord *)(mem + ripHdrSize);
+    /*
+    struct RIPngRouteRecord *nexthoprr =
+                    (struct RIPngRouteRecord *)(mem + ripHdrSize + ripngRRSize);
+    */
+    struct RIPngRouteRecord * rr = 
+                    (struct RIPngRouteRecord *)(mem + ripHdrSize);
+
+    // RIPng header
     p->comm = 2;
     p->version = VersionRIPng;
     p->res1 = 0;
+    // next hop record
+    /*
+    nexthoprr->dst = nexthop;
+    nexthoprr->tag = 0x0;
+    nexthoprr->prefix = 0x0;
+    nexthoprr->metric = 0xFF;
+    */
+    // fake record
     rr->dst = address;
     rr->tag = htons(tag);
     rr->prefix = prefix;
     rr->metric = metric;
-    (void)nexthop;
+
+    //
     return (void *)mem;
 }
 
