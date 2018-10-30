@@ -1,9 +1,7 @@
 
-# Makefile
-# Project manager file
-# IPK project
-# FIT VUT
-# 2017/2018
+# @file 	Makefile
+# @author 	xbenes49
+# @brief  	Project manager file
 
 # compile settings
 cc = g++
@@ -32,7 +30,7 @@ doc:
 .PHONY: clean
 clean:
 	@echo "Cleaning generated files.";\
-	rm -rf *~ *.o *.gch *.dep myripsniffer myripresponse xbenes49.zip
+	rm -rf *~ *.o *.gch *.dep myripsniffer myripresponse xbenes49.tar
 	@printf "";\
 	$(MAKE) -C doc/ -s clean
 
@@ -40,6 +38,8 @@ clean:
 .PHONY: zip
 zip:
 	@echo "Zipping files.";\
-	#cp doc/manual.pdf .
-	#@printf "";
-	zip xbenes49.zip *.cpp *.h Makefile doc/* > /dev/null 2> /dev/null
+	cp doc/manual.pdf .
+	@printf "";\
+	$(MAKE) -C . -s doc
+	@printf "";\
+	tar -cf xbenes49.tar *.cpp *.h Makefile manual.pdf README > /dev/null

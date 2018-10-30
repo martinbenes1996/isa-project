@@ -219,67 +219,12 @@
             First part of project is sniffer, that listens on the given interface and catches RIP communication coming through.
             It uses {\it libpcap} library. The usage of the program is:
             \begin{lstlisting}[language=sh, basicstyle=\tiny]
-./myripsniffer -i <interface> [-v|--verbose] [-l|--link] [-n|--network] [-t|--transport]
+sudo ./myripsniffer -i <interface> [-v|--verbose] [-l|--link] [-n|--network] [-t|--transport]
             \end{lstlisting}
 
             The -i parameter is given by task. It specifies the interface program listens to. The -l/-n/-t parameters show
             additional information in the display about link/network/transport layer. The -v parameter shows full routing
             informations sent by RIP protocol. You can see full outputs in the figures \ref{fig:MyRipSnifferBrief} and \ref{fig:MyRipSniffer}.
-
-            Whole using of {\it libpcap} is covered in {\it riplib.h}. There is class Sniffer. In constructor, it takes interface
-            name. If method {\it listen()} is called on its instance, the program will start to listen on the interface, until
-            the RIP packet is caught. {\it Packet} object is returned then inluding all relevant data as strings. The format
-            of output is a matter of caller.
-            
-        \subsection{Fake Responder}
-        
-
-            % program description
-            % process of work
-    
-    \newpage
-    \section{Application}
-        
-        \subsection{Testing System Structure}
-            System where the programs were tested had following structure shown in the figure \ref{fig:TestingSystem}: virtualized Linux Mint
-            on the parent Windows 10. VirtualBox was used as the virtualization engine. As you can see in the figure \ref{fig:VBWinMint},
-            there are two interfaces. One of them is set to NAT, it is called {\it enp0s3} in the virtualized Linux Mint. The other called
-            {\it enp0s8} in Linux is host only. It is used for the program to listen to.
-
-            Inside the Linux Mint there is another VirtualBox installed, which virtualizes FreeBSD used for creating the RIP traffic.
-            All the traffic from the FreeBSD is bridged to the enp0s8 where the sniffer may work with it. You can see the settings
-            in the figures \ref{fig:MintIfconfig} and \ref{fig:VBMintBSD}.
-
-            \begin{figure}[h!]
-                \begin{center}
-                    \includegraphics[width=0.70\textwidth]{winmint.png}
-                    \caption{Settings of virtualized Linux Mint in VirtualBox on Windows. \label{fig:VBWinMint}}
-                \end{center}
-            \end{figure}
-
-            \begin{figure}[h!]
-                \begin{center}
-                    \includegraphics[width=0.45\textwidth]{mintifconfig.png}
-                    \caption{Interfaces on Linux Mint. \label{fig:MintIfconfig}}
-                \end{center}
-            \end{figure}
-
-            \begin{figure}[h!]
-                \begin{center}
-                    \includegraphics[width=0.70\textwidth]{mintbsd.png}
-                    \caption{Settings of virtualized FreeBSD in VirtualBox on Linux Mint. \label{fig:VBMintBSD}}
-                \end{center}
-            \end{figure}
-
-            \begin{figure}[h!]
-                \begin{center}
-                    \includegraphics[width=0.70\textwidth]{programming.png}
-                    \caption{Structure of the whole testing system. \label{fig:TestingSystem} \cite{WindowsLogo} \cite{MintLogo} \cite{FreeBSDLogo} \cite{VirtualBoxLogo}}
-                \end{center}
-            \end{figure}
-        
-        \newpage
-        \subsection{Testing}
 
             \begin{figure}[h!]
                 \begin{center}
@@ -294,6 +239,100 @@
                     \caption{Output of myripsniffer. \label{fig:MyRipSnifferBrief}}
                 \end{center}
             \end{figure}
+
+            Whole using of {\it libpcap} is covered in {\it sniffer.h}. There is class Sniffer. When method {\it listen()} is called,
+            the program will start to listen on the interface, until the RIP packet is caught. {\it Packet} object is returned 
+            including all relevant data as strings. The format of output is a matter of caller.
+            \begin{figure}[h!]
+            \begin{lstlisting}[language=c, basicstyle=\tiny]
+do {
+    Packet p = s.listen();
+    printPacket(p);
+} while(true);
+            \end{lstlisting}
+            \end{figure}
+            
+        \subsection{Fake Responder}
+            The second part is fake RIP Responder generating traffic to the
+            interface. It causes that routers listening to the link to save
+            the fake route to their routing tables.  The usage corresponds
+            with the task specification:
+            \begin{figure}[h!]
+            \begin{lstlisting}[language=sh, basicstyle=\tiny]
+sudo ./myripresponse -i <interface> -r <IPv6>/[16-128] {-n <IPv6>} {-m [0-16]} {-t [0-65535]}
+            \end{lstlisting}
+            \end{figure}
+
+            Parameters -i and -r are compulsory, they specify interface and fake route address.
+            Parameters -n, -m and -t sets respectively next hop, metrics and route tag.
+
+            %\begin{figure}[h!]
+            %    \begin{center}
+            %        \includegraphics[width=0.45\textwidth]{responderoutput.png}
+            %        \caption{Output of myripresponder. \label{fig:MyRipResponder}}
+            %    \end{center}
+            %\end{figure}
+
+            \begin{figure}[h!]
+                \begin{center}
+                    \includegraphics[width=0.45\textwidth]{freebsdroutes.png}
+                    \caption{Routes of FreeBSD with the fake route.\label{fig:FreeBSDRoutes}}
+                \end{center}
+            \end{figure}
+
+            After initialization part, where the socket is being opened, program is cycling in a cycle, where it
+            sends packet and waits for 30 s. The interface is to be seen in the figure \ref{fig:FreeBSDRoutes}.
+
+            \begin{lstlisting}[language=c, basicstyle=\tiny]
+do {
+    sendto(fd, packet, sizeof(packet), 0, (struct sockaddr*)&addr, sizeof(address));
+    sleep(29);
+} while(true);
+            \end{lstlisting}
+    
+    \newpage
+    \section{Application}
+        
+        \subsection{Testing System Structure}
+            System where the programs were tested had the structure shown in the figure \ref{fig:TestingSystem}.
+            VirtualBox was used as the virtualization engine. As you can see in the figure \ref{fig:VBWinMint},
+            virtualized Linux Mint has two interfaces. One of them is set to NAT, linux named it {\it enp0s3}.
+            The other ({\it enp0s8}) is host only. It is used for the program to listen to.
+
+            Inside the Linux Mint there is another VirtualBox installed, which virtualizes FreeBSD used as virtual
+            router. FreeBSD NIC is bridged to the enp0s8. The figures \ref{fig:MintIfconfig}
+            and \ref{fig:VBMintBSD} display it.
+
+            \begin{figure}[h!]
+                \begin{center}
+                    \includegraphics[width=0.60\textwidth]{winmint.png}
+                    \caption{Settings of virtualized Linux Mint in VirtualBox on Windows. \label{fig:VBWinMint}}
+                \end{center}
+            \end{figure}
+
+            \begin{figure}[h!]
+                \begin{center}
+                    \includegraphics[width=0.40\textwidth]{mintifconfig.png}
+                    \caption{Interfaces on Linux Mint. \label{fig:MintIfconfig}}
+                \end{center}
+            \end{figure}
+
+            \begin{figure}[h!]
+                \begin{center}
+                    \includegraphics[width=0.60\textwidth]{mintbsd.png}
+                    \caption{Settings of virtualized FreeBSD in VirtualBox on Linux Mint. \label{fig:VBMintBSD}}
+                \end{center}
+            \end{figure}
+
+            \begin{figure}[h!]
+                \begin{center}
+                    \includegraphics[width=0.70\textwidth]{programming.png}
+                    \caption{Structure of the whole testing system. \label{fig:TestingSystem} \cite{WindowsLogo} \cite{MintLogo} \cite{FreeBSDLogo} \cite{VirtualBoxLogo}}
+                \end{center}
+            \end{figure}
+        
+        \newpage
+        \subsection{Testing}
 
             Using the sniffer, there were discovered routes for RIPv2 (table \ref{tab:ripv2routingdata})
             and RIPng (table \ref{tab:ripngroutingdata}).
@@ -321,9 +360,16 @@
                     fd00:974:62::   & 64            & 1 \\ 
                     fd00:b94:167d:: & 64            & 1 \\ \hline
                 \end{tabular}
-                \caption{RIPv2 Routing Table Data. \label{tab:ripngroutingdata}}
+                \caption{RIPng Routing Table Data. \label{tab:ripngroutingdata}}
                 \end{center}
             \end{table}
+
+            Testing of responder was verified by checking the routing table in the virtualized
+            FreeBSD. You can see in the figure \ref{fig:FreeBSDRoutes} that traffic generated
+            by the myripresponder caused creating the record in the routing table of the neighbor router.
+
+            
+
             % description of testing
             % figure with printscreens from Wireshark
     
