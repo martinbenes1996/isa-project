@@ -235,41 +235,50 @@ Packet Sniffer::parseRIP(struct pcap_pkthdr* header, const u_char* data) {
         if(rip->version == 0x01) p.rip.protocol = "RIPv1";
         else if(rip->version == 0x02) p.rip.protocol = "RIPv2";
         else { p.valid = false; return p; }
+
         // authentication
-        p.rip.isAuthentized = true;
         struct RIPAuthHdr * ripAuth = (struct RIPAuthHdr *)data;
-        bool valid = true;
-        p.rip.authType = authType2str( ntohs(ripAuth->type), valid);
-        p.valid = valid;
-        // IP routes
-        if(ntohs(ripAuth->type) == 0x01) {
+        if(ripAuth->fill == 0xFFFF) {
+            p.rip.isAuthentized = true;
+            bool valid = true;
+            p.rip.authType = authType2str( ntohs(ripAuth->type), valid);
+            p.valid = valid;
+            // IP routes
+            if(ntohs(ripAuth->type) == 0x01) {
+                p.rip.isAuthentized = false;
+            // Simple Password
+            } else if(ntohs(ripAuth->type) == 0x02) {
+                p.rip.password = std::string(ripAuth->password);
+        
+            // MD5 authentication
+            } else if(ntohs(ripAuth->type) == 0x03) {
+                // read header
+                short offset = ntohs(((short *)ripAuth)[2]);
+                int len = ((char *)ripAuth)[7];
+                datasize -= len;
+                if(datasize < 0) {
+                    p.valid = false;
+                    return p;
+                }
+                unsigned char * key = ((unsigned char*)rip)+offset+4;
+                // parse MD5 key
+                std::stringstream ss;
+                ss << std::hex;
+                for(int it = 0; it < len - 4; it++) {
+                    ss << std::setw(2) << std::setfill('0') << (int)key[it];
+                }
+                p.rip.password = ss.str();
+            }
+        
+            data += ripAuthHdrSize;
+            datasize -= ripAuthHdrSize;
+        } else if(ripAuth->fill == 0x0000) {
             p.rip.isAuthentized = false;
-        // Simple Password
-        } else if(ntohs(ripAuth->type) == 0x02) {
-            p.rip.password = std::string(ripAuth->password);
-        
-        // MD5 authentication
-        } else if(ntohs(ripAuth->type) == 0x03) {
-            // read header
-            short offset = ntohs(((short *)ripAuth)[2]);
-            int len = ((char *)ripAuth)[7];
-            datasize -= len;
-            if(datasize < 0) {
-                p.valid = false;
-                return p;
-            }
-            unsigned char * key = ((unsigned char*)rip)+offset+4;
-            // parse MD5 key
-            std::stringstream ss;
-            ss << std::hex;
-            for(int it = 0; it < len - 4; it++) {
-                ss << std::setw(2) << std::setfill('0') << (int)key[it];
-            }
-            p.rip.password = ss.str();
+        } else {
+            p.valid = false;
+            return p;
         }
-        
-        data += ripAuthHdrSize;
-        datasize -= ripAuthHdrSize;
+
         // routing table records
         if((datasize % ripRRSize) != 0) { p.valid = false; return p; }
         while(datasize > 0) {

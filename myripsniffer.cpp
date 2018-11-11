@@ -69,11 +69,12 @@ int main(int argc, char *argv[]) {
 }
 
 void printPacket(Packet p) {
-    if(!p.valid) { std::cout << "Invalid packet!\n"; return; }
 
     // packet header
     static size_t counter = 1;
-    std::cout << "(" << counter << ") " << p.rip.protocol << " packet\n";
+    std::cout << "(" << counter << ") ";
+    if(!p.valid) { std::cout << "Invalid packet!\n"; return; }
+    std::cout << p.rip.protocol << " packet\n";
 
     // show link
     if(showLink) {
