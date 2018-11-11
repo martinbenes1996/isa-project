@@ -8,7 +8,9 @@
 
 // C++
 #include <iostream>
+#include <iomanip>
 #include <string>
+#include <sstream>
 #include <vector>
 // NET
 #include <arpa/inet.h>
@@ -180,7 +182,7 @@ std::string authType2str(u_int8_t at, bool& valid) {
 Packet Sniffer::parseRIP(struct pcap_pkthdr* header, const u_char* data) {
     // create packet
     Packet p;
-    size_t datasize = header->caplen;
+    long datasize = header->caplen;
 
     // Ethernet
     struct ether_header* eth = (struct ether_header*)data;
@@ -239,7 +241,33 @@ Packet Sniffer::parseRIP(struct pcap_pkthdr* header, const u_char* data) {
         bool valid = true;
         p.rip.authType = authType2str( ntohs(ripAuth->type), valid);
         p.valid = valid;
-        p.rip.password = ripAuth->password;
+        // IP routes
+        if(ntohs(ripAuth->type) == 0x01) {
+            p.rip.isAuthentized = false;
+        // Simple Password
+        } else if(ntohs(ripAuth->type) == 0x02) {
+            p.rip.password = std::string(ripAuth->password);
+        
+        // MD5 authentication
+        } else if(ntohs(ripAuth->type) == 0x03) {
+            // read header
+            short offset = ntohs(((short *)ripAuth)[2]);
+            int len = ((char *)ripAuth)[7];
+            datasize -= len;
+            if(datasize < 0) {
+                p.valid = false;
+                return p;
+            }
+            unsigned char * key = ((unsigned char*)rip)+offset+4;
+            // parse MD5 key
+            std::stringstream ss;
+            ss << std::hex;
+            for(int it = 0; it < len - 4; it++) {
+                ss << std::setw(2) << std::setfill('0') << (int)key[it];
+            }
+            p.rip.password = ss.str();
+        }
+        
         data += ripAuthHdrSize;
         datasize -= ripAuthHdrSize;
         // routing table records

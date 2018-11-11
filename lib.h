@@ -8,14 +8,14 @@
 #define LIB_H
 
 // C++
-#include <string>
+#include <iostream>
 
 /**
  * @brief Prints error and exits.
  * @param error         String to print.
  * @param errcode       Error code.
  */
-void printErrorAndExit(std::string error, int errcode) {
+void printErrorAndExit(const char* error, int errcode) {
     std::cerr << error << "\n";
     exit(errcode);
 }

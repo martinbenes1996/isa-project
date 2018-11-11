@@ -7,6 +7,7 @@
 // C
 #include <climits>
 #include <ctype.h>
+#include <signal.h>
 #include <string.h>
 #include <unistd.h>
 // C++
@@ -29,23 +30,32 @@ namespace {
     const char * ifce = NULL;   /**< Interface name.*/
     struct in6_addr addr;        /**< Address of the fake network. */
     u_int8_t mask;              /**< Mask of the fake network. */
-    struct in6_addr nexthop;     /**< Address of fake route next-hop. */
+    struct in6_addr* nexthop = NULL;     /**< Address of fake route next-hop. */
     u_int8_t metric;            /**< Hop-count. */
     u_int16_t rttag;             /**< Route tag. */
-    const char * passwd = NULL; /**< Password. */
+    int fd = -1;
 }
 /* ------------------------------------------------------------- */
 
+void sigintHandler(int) {
+    if(fd != -1) close(fd);
+    if(nexthop != NULL) free(nexthop);
+    exit(1);
+}
 
 /**
  * @brief Prints the usage and then terminate the program.
  */
 void printUsageAndExit() {
-    std::cerr << "Usage: ./myripresponse {-i <interface>} -r <IPv6>/[16-128] {-n <IPv4>} {-m [0-16]} {-t [0-65535]} {-p <password>}\n";
+    if(fd != -1) close(fd);
+    if(nexthop != NULL) free(nexthop);
+    std::cerr << "Usage: ./myripresponse -i <interface> -r <IPv6>/[16-128] {-n <IPv6>} {-m [0-16]} {-t [0-65535]}\n";
     exit(1);
 }
 
 void printErrnoAndExit() {
+    if(fd != -1) close(fd);
+    if(nexthop != NULL) free(nexthop);
     std::cerr << strerror(errno) << "\n";
     exit(errno);
 }
@@ -67,6 +77,7 @@ int getInterfaceIndex(std::string);
 
 /**
  * @brief RIP Response Generator.
+ * @param packetsize    Size.
  * @param address       Address.
  * @param prefix        Address prefix.
  * @param metric        Metric.
@@ -75,11 +86,12 @@ int getInterfaceIndex(std::string);
  * @returns Memory with generated packet. Never free.
  *          After second call the memory is reused.
  */
-void * generateRIPResponse(struct in6_addr address,
+void * generateRIPResponse(size_t& packetsize,
+                           struct in6_addr address,
                            u_int8_t prefix,
-                           u_int8_t metric = 1,
-                           struct in6_addr nexthop = in6_addr{0},
-                           u_int16_t tag = 0);
+                           u_int8_t metric,
+                           struct in6_addr* nexthop,
+                           u_int16_t tag);
 
 /* --------------------- main function -------------------------- */
 /**
@@ -99,9 +111,10 @@ int main(int argc, char *argv[]) {
     parseArgs(argc, argv);
     
     // open socket
-    int fd;
     if((fd = socket(AF_INET6, SOCK_DGRAM, 0)) < 0)
         printErrnoAndExit();
+    // sigint handle
+    signal(SIGINT, sigintHandler);
 
     // source
     struct sockaddr_in6 localaddr;
@@ -132,9 +145,14 @@ int main(int argc, char *argv[]) {
     if(setsockopt(fd, IPPROTO_IPV6, IPV6_MULTICAST_HOPS, (void*)&hoplimit, sizeof(int)) < 0)
         printErrnoAndExit();
 
+    // reuse address
+    int enable = 1;
+    if(setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &enable, sizeof(int)) < 0)
+        printErrnoAndExit();
+
     // generate RIP packet
-    void * p = generateRIPResponse(addr, mask, metric, nexthop, rttag);
-    size_t packetsize = ripHdrSize+2*ripngRRSize;
+    size_t packetsize;
+    void * p = generateRIPResponse(packetsize, addr, mask, metric, nexthop, rttag);
     
     std::cout << "Welcome to My RIP Response!\n";
     std::cout << "Generating fake RIP Response on the interface \"" << ifce << "\":\n\n";
@@ -176,8 +194,9 @@ std::string getLinkLocalAddress(std::string interface) {
         // local (prefix 0xfe80)
         if((curr->sin6_addr.s6_addr[0] == 0xfe) && (curr->sin6_addr.s6_addr[1] == 0x80)) {
             // found
+            std::string a = ip2str(curr->sin6_addr);
             freeifaddrs(ifaddr);
-            return ip2str(curr->sin6_addr);
+            return a;
         }
     }
     // not found
@@ -263,12 +282,6 @@ void parseArgs(int argc, char *argv[]) {
             else ifce = argv[i+1];
         }
         
-        // -p
-        else if( !strcmp(argv[i],"-p") ) {
-            if(passwd != NULL) printUsageAndExit();
-            else passwd = argv[i+1];
-        }
-        
         // -r
         else if( !strcmp(argv[i],"-r") ) {
             if( givenAddr ) printUsageAndExit();
@@ -292,8 +305,11 @@ void parseArgs(int argc, char *argv[]) {
         // -n
         else if( !strcmp(argv[i],"-n") ) {
             if( givenNextHop ) printUsageAndExit();
-            if(inet_pton(AF_INET6, argv[i+1], &nexthop) != 1) printUsageAndExit();
-            // ...
+            if( (nexthop = (struct in6_addr*)malloc(sizeof(struct in6_addr))) == NULL) {
+                std::cerr << "Bad alloc!\n";
+                exit(666);
+            }
+            if(inet_pton(AF_INET6, argv[i+1], nexthop) != 1) printUsageAndExit();
             givenNextHop = true;
         }
 
@@ -319,15 +335,14 @@ void parseArgs(int argc, char *argv[]) {
     if( ifce == NULL ) printUsageAndExit();
     if( !givenAddr ) printUsageAndExit();
     if( !givenMetric ) metric = 1;
-    if( !givenNextHop ) inet_pton(AF_INET6, "::", &nexthop);
     if( !givenRtTag ) rttag = 0;
-    if( passwd == NULL ) passwd = "";
 }
 
-void * generateRIPResponse(struct in6_addr address,
+void * generateRIPResponse(size_t& packetsize,
+                           struct in6_addr address,
                            u_int8_t prefix,
                            u_int8_t metric,
-                           struct in6_addr nexthop,
+                           struct in6_addr* nexthop,
                            u_int16_t tag) {
     // memory & header pointers
     static unsigned char mem[ripHdrSize + 2*ripngRRSize];
@@ -349,10 +364,15 @@ void * generateRIPResponse(struct in6_addr address,
     rr->prefix = prefix;
     rr->metric = metric;
     // next hop record
-    nexthoprr->dst = nexthop;
-    nexthoprr->tag = 0x0;
-    nexthoprr->prefix = 0x0;
-    nexthoprr->metric = 0xFF;
+    if(nexthop != NULL) {
+        nexthoprr->dst = *nexthop;
+        nexthoprr->tag = 0x0;
+        nexthoprr->prefix = 0x0;
+        nexthoprr->metric = 0xFF;
+        packetsize = ripHdrSize + 2*ripngRRSize;
+    } else {
+        packetsize = ripHdrSize + ripngRRSize;
+    }
 
     // return data
     return (void *)mem;

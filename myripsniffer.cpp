@@ -7,7 +7,9 @@
 #include <iostream>
 #include <cstring>
 #include <string>
+#include <signal.h>
 // My Headers
+#include "lib.h"
 #include "sniffer.h"
 
 /* ------------------------------ */
@@ -96,7 +98,7 @@ void printPacket(Packet p) {
     if(verbose) {
         if(p.rip.isAuthentized) {
             std::cout << "Authentized with " << p.rip.authType
-                      << " (password: \"" << p.rip.password << "\").\n";
+                      << " (\"" << p.rip.password << "\").\n";
         }
         std::cout << "Address / Subnet prefix or mask       Hop count\n";
         for(auto& it: p.rip.records) {

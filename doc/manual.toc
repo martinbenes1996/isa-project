@@ -48,8 +48,8 @@
 \defcounter {refsection}{0}\relax 
 \contentsline {subsection}{\numberline {3.2}Fake Responder}{7}
 \defcounter {refsection}{0}\relax 
-\contentsline {section}{\numberline {4}Application}{8}
+\contentsline {section}{\numberline {4}Testing}{8}
 \defcounter {refsection}{0}\relax 
-\contentsline {subsection}{\numberline {4.1}Testing System Structure}{8}
+\contentsline {subsection}{\numberline {4.1}System Structure}{8}
 \defcounter {refsection}{0}\relax 
-\contentsline {subsection}{\numberline {4.2}Testing}{9}
+\contentsline {subsection}{\numberline {4.2}Procedure}{9}
