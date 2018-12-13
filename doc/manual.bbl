@@ -1,0 +1,307 @@
+% $ biblatex auxiliary file $
+% $ biblatex bbl format version 2.6 $
+% Do not modify the above lines!
+%
+% This is an auxiliary file used by the 'biblatex' package.
+% This file may safely be deleted. It will be recreated by
+% biber as required.
+%
+\begingroup
+\makeatletter
+\@ifundefined{ver@biblatex.sty}
+  {\@latex@error
+     {Missing 'biblatex' package}
+     {The bibliography requires the 'biblatex' package.}
+      \aftergroup\endinput}
+  {}
+\endgroup
+
+
+\refsection{0}
+  \sortlist[entry]{none/global}
+    \entry{Cloudimage}{misc}{}
+      \name{author}{1}{}{%
+        {{hash=93d707cc77f037fd02e1c8cfa75317cf}{%
+           family={Commons},
+           family_i={C\bibinitperiod},
+           given={Wikimedia},
+           given_i={W\bibinitperiod}}}%
+      }
+      \strng{namehash}{93d707cc77f037fd02e1c8cfa75317cf}
+      \strng{fullhash}{93d707cc77f037fd02e1c8cfa75317cf}
+      \field{sortinit}{0}
+      \field{sortinithash}{990108227b3316c02842d895999a0165}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{note}{Visited on 2018-10-17}
+      \field{title}{Cartoon cloud}
+      \field{year}{2009}
+      \verb{url}
+      \verb https://en.m.wikipedia.org/wiki/File:Cartoon_cloud.svg
+      \endverb
+    \endentry
+    \entry{PCimage}{misc}{}
+      \name{author}{1}{}{%
+        {{hash=93d707cc77f037fd02e1c8cfa75317cf}{%
+           family={Commons},
+           family_i={C\bibinitperiod},
+           given={Wikimedia},
+           given_i={W\bibinitperiod}}}%
+      }
+      \strng{namehash}{93d707cc77f037fd02e1c8cfa75317cf}
+      \strng{fullhash}{93d707cc77f037fd02e1c8cfa75317cf}
+      \field{sortinit}{0}
+      \field{sortinithash}{990108227b3316c02842d895999a0165}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{note}{Visited on 2018-10-17}
+      \field{title}{IBM PC 5150}
+      \field{year}{2004}
+      \verb{url}
+      \verb https://en.wikipedia.org/wiki/Personal_computer
+      \endverb
+    \endentry
+    \entry{RFC1058}{report}{}
+      \list{institution}{1}{%
+        {Rutgers University}%
+      }
+      \field{sortinit}{0}
+      \field{sortinithash}{990108227b3316c02842d895999a0165}
+      \field{labeltitlesource}{title}
+      \field{month}{06}
+      \field{title}{{Routing Information Protocol}}
+      \field{type}{Standard}
+      \field{year}{1988}
+      \verb{url}
+      \verb https://tools.ietf.org/html/rfc1058
+      \endverb
+    \endentry
+    \entry{RFC2453}{report}{}
+      \list{institution}{1}{%
+        {Bay Networks}%
+      }
+      \field{sortinit}{0}
+      \field{sortinithash}{990108227b3316c02842d895999a0165}
+      \field{labeltitlesource}{title}
+      \field{month}{11}
+      \field{title}{{RIP Version 2}}
+      \field{type}{Standard}
+      \field{year}{1998}
+      \verb{url}
+      \verb https://tools.ietf.org/html/rfc2453
+      \endverb
+    \endentry
+    \entry{RFC2080}{report}{}
+      \list{institution}{1}{%
+        {Ipsilon Networks}%
+      }
+      \field{sortinit}{0}
+      \field{sortinithash}{990108227b3316c02842d895999a0165}
+      \field{labeltitlesource}{title}
+      \field{month}{01}
+      \field{title}{{RIPng for IPv6}}
+      \field{type}{Standard}
+      \field{year}{1997}
+      \verb{url}
+      \verb https://tools.ietf.org/html/rfc2080
+      \endverb
+    \endentry
+    \entry{RFC2081}{report}{}
+      \list{institution}{1}{%
+        {Xylogics}%
+      }
+      \field{sortinit}{0}
+      \field{sortinithash}{990108227b3316c02842d895999a0165}
+      \field{labeltitlesource}{title}
+      \field{month}{01}
+      \field{title}{{RIPng Protocol Applicability Statement}}
+      \field{type}{Standard}
+      \field{year}{1997}
+      \verb{url}
+      \verb https://tools.ietf.org/html/rfc2081
+      \endverb
+    \endentry
+    \entry{RIPJuniper}{misc}{}
+      \name{author}{1}{}{%
+        {{hash=b692bd85d9e3d1107922a773857c2e29}{%
+           family={Networks},
+           family_i={N\bibinitperiod},
+           given={Juniper},
+           given_i={J\bibinitperiod}}}%
+      }
+      \strng{namehash}{b692bd85d9e3d1107922a773857c2e29}
+      \strng{fullhash}{b692bd85d9e3d1107922a773857c2e29}
+      \field{sortinit}{0}
+      \field{sortinithash}{990108227b3316c02842d895999a0165}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{month}{08}
+      \field{title}{{RIP Overview}}
+      \field{year}{2017}
+      \verb{url}
+      \verb https://www.juniper.net/documentation/en_US/junos/topics/concept/routing-protocol-rip-security-overview.html
+      \endverb
+    \endentry
+    \entry{RIPGuide}{misc}{}
+      \name{author}{1}{}{%
+        {{hash=7565fb8803579b4c37ccb4220b16c1b9}{%
+           family={Kozierok},
+           family_i={K\bibinitperiod},
+           given={Charles\bibnamedelima M.},
+           given_i={C\bibinitperiod\bibinitdelim M\bibinitperiod}}}%
+      }
+      \strng{namehash}{7565fb8803579b4c37ccb4220b16c1b9}
+      \strng{fullhash}{7565fb8803579b4c37ccb4220b16c1b9}
+      \field{sortinit}{0}
+      \field{sortinithash}{990108227b3316c02842d895999a0165}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{title}{TCP/IP Routing Information Protocol (RIP, RIP-2 and RIPng)}
+      \field{year}{2005}
+      \verb{url}
+      \verb http://www.tcpipguide.com/
+      \endverb
+    \endentry
+    \entry{RIPWikipedia}{misc}{}
+      \field{sortinit}{0}
+      \field{sortinithash}{990108227b3316c02842d895999a0165}
+      \field{labeltitlesource}{title}
+      \field{howpublished}{\url{https://en.wikipedia.org/wiki/Routing_Information_Protocol}}
+      \field{note}{Accessed: 2018-09-30}
+      \field{title}{Routing Information Protocol - Wikipedia}
+    \endentry
+    \entry{computernetworking}{book}{}
+      \name{author}{2}{}{%
+        {{hash=eaa988056a027bb9eebaf02515594f87}{%
+           family={Kurose},
+           family_i={K\bibinitperiod},
+           given={James\bibnamedelima F.},
+           given_i={J\bibinitperiod\bibinitdelim F\bibinitperiod}}}%
+        {{hash=b5ebc55d7c1b670ae670eb965c824b69}{%
+           family={Ross},
+           family_i={R\bibinitperiod},
+           given={Keith\bibnamedelima W.},
+           given_i={K\bibinitperiod\bibinitdelim W\bibinitperiod}}}%
+      }
+      \list{publisher}{1}{%
+        {Addison Wesley}%
+      }
+      \strng{namehash}{8b15a4387b0307c036b07ba93a736932}
+      \strng{fullhash}{8b15a4387b0307c036b07ba93a736932}
+      \field{sortinit}{0}
+      \field{sortinithash}{990108227b3316c02842d895999a0165}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{isbn}{0-321-17644-8}
+      \field{title}{Computer Networking - A Top-Down Approach Featuring the Internet}
+      \field{year}{2003}
+    \endentry
+    \entry{mistrovstvivsitich}{book}{}
+      \name{author}{1}{}{%
+        {{hash=ffe729dce3af489912bfb1672b1fc65c}{%
+           family={Bigelow},
+           family_i={B\bibinitperiod},
+           given={Stephen\bibnamedelima J.},
+           given_i={S\bibinitperiod\bibinitdelim J\bibinitperiod}}}%
+      }
+      \list{publisher}{1}{%
+        {Computer Press}%
+      }
+      \strng{namehash}{ffe729dce3af489912bfb1672b1fc65c}
+      \strng{fullhash}{ffe729dce3af489912bfb1672b1fc65c}
+      \field{sortinit}{0}
+      \field{sortinithash}{990108227b3316c02842d895999a0165}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{isbn}{80-251-0178-9}
+      \field{title}{Mistrovství v počítačových sítích}
+      \field{year}{2004}
+    \endentry
+    \entry{WindowsLogo}{misc}{}
+      \name{author}{1}{}{%
+        {{hash=93d707cc77f037fd02e1c8cfa75317cf}{%
+           family={Commons},
+           family_i={C\bibinitperiod},
+           given={Wikimedia},
+           given_i={W\bibinitperiod}}}%
+      }
+      \strng{namehash}{93d707cc77f037fd02e1c8cfa75317cf}
+      \strng{fullhash}{93d707cc77f037fd02e1c8cfa75317cf}
+      \field{sortinit}{0}
+      \field{sortinithash}{990108227b3316c02842d895999a0165}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{note}{Visited on 2018-10-17}
+      \field{title}{Windows Logo 2012}
+      \field{year}{2016}
+      \verb{url}
+      \verb https://commons.wikimedia.org/wiki/File:Windows_logo_%E2%80%93_2012_(blue-purple).svg
+      \endverb
+    \endentry
+    \entry{MintLogo}{misc}{}
+      \name{author}{1}{}{%
+        {{hash=93d707cc77f037fd02e1c8cfa75317cf}{%
+           family={Commons},
+           family_i={C\bibinitperiod},
+           given={Wikimedia},
+           given_i={W\bibinitperiod}}}%
+      }
+      \strng{namehash}{93d707cc77f037fd02e1c8cfa75317cf}
+      \strng{fullhash}{93d707cc77f037fd02e1c8cfa75317cf}
+      \field{sortinit}{0}
+      \field{sortinithash}{990108227b3316c02842d895999a0165}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{note}{Visited on 2018-10-17}
+      \field{title}{Linux Mint logo}
+      \field{year}{2014}
+      \verb{url}
+      \verb https://commons.wikimedia.org/wiki/File:Linux_Mint_logo_without_wordmark.svg
+      \endverb
+    \endentry
+    \entry{FreeBSDLogo}{misc}{}
+      \name{author}{1}{}{%
+        {{hash=93d707cc77f037fd02e1c8cfa75317cf}{%
+           family={Commons},
+           family_i={C\bibinitperiod},
+           given={Wikimedia},
+           given_i={W\bibinitperiod}}}%
+      }
+      \strng{namehash}{93d707cc77f037fd02e1c8cfa75317cf}
+      \strng{fullhash}{93d707cc77f037fd02e1c8cfa75317cf}
+      \field{sortinit}{0}
+      \field{sortinithash}{990108227b3316c02842d895999a0165}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{note}{Visited on 2018-10-17}
+      \field{title}{FreeBSD Logo}
+      \field{year}{2016}
+      \verb{url}
+      \verb https://commons.wikimedia.org/wiki/File:Antu_distributor-logo-freebsd.svg
+      \endverb
+    \endentry
+    \entry{VirtualBoxLogo}{misc}{}
+      \name{author}{1}{}{%
+        {{hash=93d707cc77f037fd02e1c8cfa75317cf}{%
+           family={Commons},
+           family_i={C\bibinitperiod},
+           given={Wikimedia},
+           given_i={W\bibinitperiod}}}%
+      }
+      \strng{namehash}{93d707cc77f037fd02e1c8cfa75317cf}
+      \strng{fullhash}{93d707cc77f037fd02e1c8cfa75317cf}
+      \field{sortinit}{0}
+      \field{sortinithash}{990108227b3316c02842d895999a0165}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{note}{Visited on 2018-10-17}
+      \field{title}{VirtualBox Logo}
+      \field{year}{2010}
+      \verb{url}
+      \verb https://commons.wikimedia.org/wiki/File:Virtualbox_logo.png
+      \endverb
+    \endentry
+  \endsortlist
+\endrefsection
+\endinput
+
